@@ -15,7 +15,7 @@ def main(separator='\t'):
     data = read_mapper_output(sys.stdin, separator=separator)
     for key, value in groupby(data, itemgetter(0)):
         nodes = eval(key)
-        neighbours_list = eval(value)
+        neighbours_list = [eval(i[1]) for i in value]
 
         print("{}\t{}".format(nodes, neighbours_list))
 

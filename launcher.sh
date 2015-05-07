@@ -9,7 +9,7 @@ mkdir -p "Output"
 echo "First round: find neighbours"
 
 if [ ! -f $NEIGHBOURS  ]; then
-    cat Input/smallClique.txt | Streamer/NeighbourMapper.py | sort -n | Streamer/NeighbourReducer.py > $NEIGHBOURS
+    cat Input/$1 | Streamer/NeighbourMapper.py | sort -n | Streamer/NeighbourReducer.py > $NEIGHBOURS
 fi
 
 i=0

@@ -2,7 +2,6 @@
 
 import sys
 
-
 def read_input(f, separator='\t'):
     for line in f:
         # split the line into words
@@ -12,10 +11,13 @@ def read_input(f, separator='\t'):
 def main(separator='\t'):
     data = read_input(sys.stdin)
     for u, v in data:
-        key = sorted([int(i) for i in (u, v)])
+        # key = sorted([int(i) for i in (u, v)])
 
-        if key[0] == int(u):
-            print("{}\t{}".format(*key))
+
+        # if key[0] == int(u):
+        # print("{}\t{}".format(*key))
+        print("{}\t{}".format(u,v))
+
 
 
 if __name__ == '__main__':

@@ -14,7 +14,7 @@ def read_mapper_output(file, separator='\t'):
 def main(separator='\t'):
     data = read_mapper_output(sys.stdin, separator=separator)
     for key, value in groupby(data, itemgetter(0)):
-        print("{}\t{}".format(key, " ".join([i[1] for i in value])))
+        print("{}\t{}".format(key, " ".join(tuple(i[1] for i in value))))
 
 if __name__ == "__main__":
     main()

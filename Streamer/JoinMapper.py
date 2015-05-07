@@ -21,9 +21,9 @@ def main(separator='\t'):
         node = int(node)
 
         neighbours = neighbours.split(" ")
-        neighbours = [int(n) for n in neighbours]
+        neighbours = (node, tuple(int(n) for n in neighbours))
 
-        for n in neighbours:
+        for n in neighbours[1]:
             print("{}\t{}".format(sorted((node, n)), neighbours))
 
 if __name__ == '__main__':

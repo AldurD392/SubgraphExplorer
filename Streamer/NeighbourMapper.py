@@ -1,23 +1,14 @@
 #!/usr/bin/env python
 
 import sys
-
-def read_input(f, separator='\t'):
-    for line in f:
-        # split the line into words
-        yield line.rstrip().split(separator, 1)
+from utils import read_input
 
 
 def main(separator='\t'):
+    """Emit the node and its neighbour."""
     data = read_input(sys.stdin)
     for u, v in data:
-        # key = sorted([int(i) for i in (u, v)])
-
-
-        # if key[0] == int(u):
-        # print("{}\t{}".format(*key))
-        print("{}\t{}".format(u,v))
-
+        print("{}\t{}".format(u, v))
 
 
 if __name__ == '__main__':

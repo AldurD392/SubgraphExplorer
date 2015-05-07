@@ -1,38 +1,38 @@
 #!/usr/bin/env python
 
 
+from utils import read_input
+from constants import EURISTIC_FACTOR
+
+from collections import Counter
 import sys
-# import set
-
-def density(nodes, set_neighbours):
-    edges = 0
-    for t in set_neighbours:
-        for u in node:
-            if u in t:
-                edges += 1
-    return ((edges/2)/len(nodes))
-
-def choose_nodes(set_neighbours):
-    set_list = [set(t[1]) for t in set_neighbours]
-    return set.intersection(*set_list)
 
 
-def read_input(f, separator='\t'):
-    for line in f:
-        # split the line into words
-        yield line.rstrip().split(separator, 1)
+def choose_nodes(neighbours_iterable):
+    neighbours_count = len(neighbours_iterable)
+    unpacked_list = []
+    for t in neighbours_iterable:
+        unpacked_list += t[1:]
+    c = Counter(unpacked_list)
+    return tuple(k for k, v in c.items() if v >= neighbours_count * EURISTIC_FACTOR)
 
 
 def main(separator='\t'):
+    """
+    Choose the next node to be added to the subgraph.
+    Take as input:
+        - iterable of nodes (ordered) as key
+        - iterable of iterable as value
+    """
     data = read_input(sys.stdin)
-    for nodes, set_neighbours in data:
+    for nodes, neighbours_iterable in data:
         nodes = eval(nodes)
 
-        set_neighbours = eval(set_neighbours)
-        next_nodes = choose_nodes(set_neighbours)
+        neighbours_iterable = eval(neighbours_iterable)
+        next_nodes = choose_nodes(neighbours_iterable)
 
         for n in next_nodes:
-            print("{}\t{}".format(sorted(nodes + [n]),  set_neighbours))
+            print("{}\t{}".format(sorted(nodes + (n, )), neighbours_iterable))
 
 if __name__ == '__main__':
     main()

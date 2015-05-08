@@ -15,7 +15,9 @@ def choose_nodes(nodes, neighbours_iterable):
         unpacked_list += t[1:]
     c = Counter(unpacked_list)
 
-    return tuple(k for k, v in c.items() if v >= neighbours_count * EURISTIC_FACTOR and k not in set(nodes))
+    nodes_set = set(nodes)
+
+    return tuple(k for k, v in c.items() if v >= neighbours_count * EURISTIC_FACTOR and k not in nodes_set)
 
 
 def main(separator='\t'):

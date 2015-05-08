@@ -6,44 +6,44 @@
 package com.github.aldurd392.bigdatacontest;
 
 import java.io.IOException;
+
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.*;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 
-/**
- *
- * @author aldur
- */
-class Main {
+import CustomTypes.LongWritableArray;
+import DegreesFilter.NeighbourReducer;
 
-	/**
-	 * @param args the command line arguments
-	 * @throws java.io.IOException
-	 * @throws java.lang.InterruptedException
-	 * @throws java.lang.ClassNotFoundException
-	 */
+public class Main {
+
 	public static void main(String[] args) 
 		throws IOException, InterruptedException, ClassNotFoundException {
+				
+		// First job1: CountEdges
 		Configuration conf = new Configuration();
-		Job job = Job.getInstance(conf, null);
+
+		Job job = Job.getInstance(conf, "Filter");
 		
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(IntWritable.class);
+		job.setMapperClass(NeighbourMapper.class);
+		job.setReducerClass(NeighbourReducer.class);
 		
-//		job.setMapperClass(Map.class);
-//		job.setReducerClass(Reduce.class);
+		// mapper output types
+		job.setMapOutputKeyClass(LongWritable.class);
+		job.setMapOutputValueClass(LongWritable.class);
 		
-		job.setInputFormatClass(TextInputFormat.class);
-		job.setOutputFormatClass(TextOutputFormat.class);
+		// reducer output types
+		job.setOutputKeyClass(LongWritableArray.class);
+		job.setOutputValueClass(ShortWritable.class);
 		
+		job.setInputFormatClass(KeyValueTextInputFormat.class);
+
 		FileInputFormat.addInputPath(job, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
 		
 		job.waitForCompletion(true);
-	}
+		}
 }

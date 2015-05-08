@@ -23,28 +23,21 @@
  */
 package com.github.aldurd392.bigdatacontest;
 
-import java.util.StringTokenizer;
+import java.io.IOException;
+
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
-/**
- *
- * @author aldur
- */
-public class NeighbourMapper extends Mapper<LongWritable, Text, LongWritable, LongWritable> {
 
-	private Text source;
-	private Text destination;
+public class NeighbourMapper extends Mapper<Text, Text, LongWritable, LongWritable> {
 	
-	public void Map(LongWritable key, Text value, Context context) {
-		StringTokenizer itr = new StringTokenizer(value.toString());
+	private LongWritable u = new LongWritable();
+	private LongWritable v = new LongWritable();
 
-		while (itr.hasMoreTokens()) {
-			source.set(itr.nextToken());
-			destination.set(itr.nextToken());
-
-
-		}
+	public void map(Text key, Text value, Context context) throws IOException, InterruptedException {
+		u.set(Long.parseLong(key.toString()));
+		v.set(Long.parseLong(value.toString()));
+		context.write(u, v);;
 	}	
 }

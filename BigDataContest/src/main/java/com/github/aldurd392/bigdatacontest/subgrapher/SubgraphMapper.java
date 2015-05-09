@@ -4,19 +4,14 @@ import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.Mapper;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
 import java.util.*;
 
-public class SubgraphMapper extends MapReduceBase
-        implements Mapper<IntArrayWritable, NeighbourhoodMap, IntArrayWritable, NeighbourhoodMap> {
+public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, IntArrayWritable, NeighbourhoodMap> {
 
     private static final double EURISTIC_FACTOR = 3.0/4.0;
-    private int numberOfKeys = 0;
 
     private static Set<IntWritable> chooseNodes(NeighbourhoodMap value) {
         Set<IntWritable> set = new HashSet<>();
@@ -50,10 +45,8 @@ public class SubgraphMapper extends MapReduceBase
 
     @Override
     public void map(IntArrayWritable key, NeighbourhoodMap value,
-                    OutputCollector<IntArrayWritable, NeighbourhoodMap> output, Reporter reporter)
-            throws IOException {
-        numberOfKeys++;
-
+                    Context context)
+            throws IOException, InterruptedException {
         IntWritable[] intKey = (IntWritable[])key.get();
         ArrayList<IntWritable> nodes = new ArrayList<>(Arrays.asList(intKey));
 
@@ -63,11 +56,7 @@ public class SubgraphMapper extends MapReduceBase
             Collections.sort(copy);
             IntArrayWritable newKey = new IntArrayWritable();
             newKey.set(copy.toArray(new IntWritable[copy.size()]));
-            output.collect(newKey, value);
-        }
-
-        if (numberOfKeys % 10 == 0) {
-            reporter.progress();
+            context.write(newKey, value);
         }
     }
 }

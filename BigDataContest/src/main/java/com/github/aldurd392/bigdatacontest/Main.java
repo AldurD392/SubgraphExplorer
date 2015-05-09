@@ -6,20 +6,26 @@
 package com.github.aldurd392.bigdatacontest;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import com.github.aldurd392.bigdatacontest.neighbourhood.NeighbourMapper;
 import com.github.aldurd392.bigdatacontest.subgrapher.SubgraphMapper;
 import com.github.aldurd392.bigdatacontest.subgrapher.SubgraphReducer;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.conf.*;
-import org.apache.hadoop.io.*;
-import org.apache.hadoop.mapred.*;
-
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.neighbourhood.NeighbourReducer;
-import org.apache.hadoop.mapred.jobcontrol.Job;
-import org.apache.hadoop.mapred.jobcontrol.JobControl;
+
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;
+import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 public class Main {
 
@@ -27,50 +33,53 @@ public class Main {
             throws IOException, InterruptedException, ClassNotFoundException {
 
         // First round: ------ CountEdges -------
-        JobConf neighbourhoodConfg = new JobConf(new Configuration());
-        neighbourhoodConfg.setJobName("Neighbourhood");
+        Job neighbourhoodJob = Job.getInstance();
+        neighbourhoodJob.setJobName("Neighbourhood");
 
-        FileInputFormat.setInputPaths(neighbourhoodConfg, new Path(args[0]));
-        FileOutputFormat.setOutputPath(neighbourhoodConfg, new Path(args[1]));
+        FileInputFormat.addInputPath(neighbourhoodJob, new Path(args[0]));
+        FileOutputFormat.setOutputPath(neighbourhoodJob, new Path(args[1]));
 
-        neighbourhoodConfg.setMapperClass(NeighbourMapper.class);
-        neighbourhoodConfg.setReducerClass(NeighbourReducer.class);
+        neighbourhoodJob.setMapperClass(NeighbourMapper.class);
+        neighbourhoodJob.setReducerClass(NeighbourReducer.class);
 
-        neighbourhoodConfg.setInputFormat(KeyValueTextInputFormat.class);
-        neighbourhoodConfg.setOutputFormat(SequenceFileOutputFormat.class);
+        neighbourhoodJob.setInputFormatClass(KeyValueTextInputFormat.class);
+        neighbourhoodJob.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-        neighbourhoodConfg.setMapOutputKeyClass(IntWritable.class);
-        neighbourhoodConfg.setMapOutputValueClass(IntWritable.class);
-        neighbourhoodConfg.setOutputKeyClass(IntArrayWritable.class);
-        neighbourhoodConfg.setOutputValueClass(NeighbourhoodMap.class);
+        neighbourhoodJob.setMapOutputKeyClass(IntWritable.class);
+        neighbourhoodJob.setMapOutputValueClass(IntWritable.class);
+        neighbourhoodJob.setOutputKeyClass(IntArrayWritable.class);
+        neighbourhoodJob.setOutputValueClass(NeighbourhoodMap.class);
 
-        Job neighbourhoodJob = new Job(neighbourhoodConfg);
+        ControlledJob neighbourhoodControlledJob = new ControlledJob(neighbourhoodJob, null);
 
         // Next rounds: ------ Build the subgraph -------
-        JobConf subgraphConfg = new JobConf(new Configuration());
-        subgraphConfg.setJobName("Subgrapher");
+        Job subgraphJob = Job.getInstance();
+        subgraphJob.setJobName("Subgrapher");
 
-        FileInputFormat.setInputPaths(subgraphConfg, new Path(args[1]));
-        FileOutputFormat.setOutputPath(subgraphConfg, new Path(args[2]));
+        FileInputFormat.setInputPaths(subgraphJob, new Path(args[1]));
+        FileOutputFormat.setOutputPath(subgraphJob, new Path(args[2]));
 
-        subgraphConfg.setInputFormat(SequenceFileInputFormat.class);
-        subgraphConfg.setOutputFormat(TextOutputFormat.class);
+        subgraphJob.setInputFormatClass(SequenceFileInputFormat.class);
+        subgraphJob.setOutputFormatClass(TextOutputFormat.class);
 
-        subgraphConfg.setMapperClass(SubgraphMapper.class);
-        subgraphConfg.setReducerClass(SubgraphReducer.class);
+        subgraphJob.setMapperClass(SubgraphMapper.class);
+        subgraphJob.setReducerClass(SubgraphReducer.class);
 
-//        subgraphConfg.setMapOutputKeyClass(IntArrayWritable.class);
-//        subgraphConfg.setMapOutputValueClass(NeighbourhoodMap.class);
-        subgraphConfg.setOutputKeyClass(IntArrayWritable.class);
-        subgraphConfg.setOutputValueClass(NeighbourhoodMap.class);
+        subgraphJob.setMapOutputKeyClass(IntArrayWritable.class);
+        subgraphJob.setMapOutputValueClass(NeighbourhoodMap.class);
+        subgraphJob.setOutputKeyClass(IntArrayWritable.class);
+        subgraphJob.setOutputValueClass(NeighbourhoodMap.class);
 
-        Job subgraphJob = new Job(subgraphConfg);
+        ArrayList<ControlledJob> dependencies = new ArrayList<>(1);
+        dependencies.add(neighbourhoodControlledJob);
+        ControlledJob subgraphControlledJob = new ControlledJob(subgraphJob, dependencies);
 
         // Job controller -----
+
         JobControl controller = new JobControl("BigDataContest");
-        controller.addJob(neighbourhoodJob);
-        controller.addJob(subgraphJob);
-        subgraphJob.addDependingJob(neighbourhoodJob);
+
+        controller.addJob(neighbourhoodControlledJob);
+        controller.addJob(subgraphControlledJob);
 
         controller.run();
     }

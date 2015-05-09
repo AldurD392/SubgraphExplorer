@@ -27,28 +27,19 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.*;
+import org.apache.hadoop.mapreduce.Mapper;
 
 
-public class NeighbourMapper extends MapReduceBase implements Mapper<Text, Text, IntWritable, IntWritable> {
+public class NeighbourMapper extends Mapper<Text, Text, IntWritable, IntWritable> {
 
     private final IntWritable u = new IntWritable();
     private final IntWritable v = new IntWritable();
 
-    private int numberOfKeys = 0;
-
     @Override
-    public void map(Text key, Text value,
-                    OutputCollector<IntWritable, IntWritable> output, Reporter reporter)
-            throws IOException {
-        numberOfKeys++;
-
+    public void map(Text key, Text value, Context context)
+                     throws IOException, InterruptedException  {
         u.set(Integer.parseInt(key.toString()));
         v.set(Integer.parseInt(value.toString()));
-        output.collect(u, v);
-
-        if (numberOfKeys % 10 == 0) {
-            reporter.progress();
-        }
+        context.write(u, v);
     }
 }

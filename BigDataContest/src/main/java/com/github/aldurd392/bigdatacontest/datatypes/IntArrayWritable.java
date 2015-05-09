@@ -2,6 +2,7 @@ package com.github.aldurd392.bigdatacontest.datatypes;
 
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
 public class IntArrayWritable extends ArrayWritable implements WritableComparable {
@@ -23,12 +24,22 @@ public class IntArrayWritable extends ArrayWritable implements WritableComparabl
 
     @Override
     public int compareTo(Object o) {
-        if (o == null) {
-            return -1;
-        }
-
         if (o instanceof IntArrayWritable) {
-            return 0;
+            IntArrayWritable other = (IntArrayWritable) o;
+
+            Writable[] our_writables = this.get();
+            Writable[] other_writables = other.get();
+
+            for (int i = 0; i < other_writables.length; i++) {
+                IntWritable w = (IntWritable) our_writables[i];
+                IntWritable x = (IntWritable) other_writables[i];
+
+                if (x.get() == w.get()) {
+                    continue;
+                }
+
+                return x.get() > w.get() ? -1 : 1;
+            }
         }
 
         return 0;

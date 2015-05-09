@@ -47,8 +47,11 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
     public void map(IntArrayWritable key, NeighbourhoodMap value,
                     Context context)
             throws IOException, InterruptedException {
-        IntWritable[] intKey = (IntWritable[])key.get();
-        ArrayList<IntWritable> nodes = new ArrayList<>(Arrays.asList(intKey));
+
+        ArrayList<IntWritable> nodes = new ArrayList<>();
+        for (Writable w: key.get()) {
+            nodes.add((IntWritable) w);
+        }
 
         for (IntWritable node: chooseNodes(value)) {
             ArrayList<IntWritable> copy = (ArrayList<IntWritable>) nodes.clone();

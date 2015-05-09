@@ -7,43 +7,38 @@ package com.github.aldurd392.bigdatacontest;
 
 import java.io.IOException;
 
+import com.github.aldurd392.bigdatacontest.neighbourhood.NeighbourMapper;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.*;
 import org.apache.hadoop.io.*;
-import org.apache.hadoop.mapreduce.*;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
+import org.apache.hadoop.mapred.*;
 
-import CustomTypes.LongWritableArray;
-import DegreesFilter.NeighbourReducer;
+import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
+import com.github.aldurd392.bigdatacontest.neighbourhood.NeighbourReducer;
 
 public class Main {
 
-	public static void main(String[] args) 
-		throws IOException, InterruptedException, ClassNotFoundException {
-				
-		// First job1: CountEdges
-		Configuration conf = new Configuration();
+    public static void main(String[] args)
+            throws IOException, InterruptedException, ClassNotFoundException {
 
-		Job job = Job.getInstance(conf, "Filter");
-		
-		job.setMapperClass(NeighbourMapper.class);
-		job.setReducerClass(NeighbourReducer.class);
-		
-		// mapper output types
-		job.setMapOutputKeyClass(LongWritable.class);
-		job.setMapOutputValueClass(LongWritable.class);
-		
-		// reducer output types
-		job.setOutputKeyClass(LongWritableArray.class);
-		job.setOutputValueClass(ShortWritable.class);
-		
-		job.setInputFormatClass(KeyValueTextInputFormat.class);
+        // First round: ------ CountEdges -------
+        JobConf neighbourhoodConfg = new JobConf(new Configuration());
 
-		FileInputFormat.addInputPath(job, new Path(args[0]));
-		FileOutputFormat.setOutputPath(job, new Path(args[1]));
-		
-		job.waitForCompletion(true);
-		}
+        neighbourhoodConfg.setJobName("Neighbourhood");
+
+        FileInputFormat.setInputPaths(neighbourhoodConfg, new Path(args[0]));
+        FileOutputFormat.setOutputPath(neighbourhoodConfg, new Path(args[1]));
+
+        neighbourhoodConfg.setMapperClass(NeighbourMapper.class);
+        neighbourhoodConfg.setReducerClass(NeighbourReducer.class);
+
+        neighbourhoodConfg.setInputFormat(KeyValueTextInputFormat.class);
+
+        neighbourhoodConfg.setMapOutputKeyClass(IntWritable.class);
+        neighbourhoodConfg.setMapOutputValueClass(IntWritable.class);
+        neighbourhoodConfg.setOutputKeyClass(IntArrayWritable.class);
+        neighbourhoodConfg.setOutputValueClass(IntArrayWritable.class);
+
+        JobClient.runJob(neighbourhoodConfg);
+    }
 }

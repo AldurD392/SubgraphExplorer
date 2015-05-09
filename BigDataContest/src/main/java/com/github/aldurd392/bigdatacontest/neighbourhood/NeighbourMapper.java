@@ -21,23 +21,34 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.github.aldurd392.bigdatacontest;
+package com.github.aldurd392.bigdatacontest.neighbourhood;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapred.*;
 
 
-public class NeighbourMapper extends Mapper<Text, Text, LongWritable, LongWritable> {
-	
-	private LongWritable u = new LongWritable();
-	private LongWritable v = new LongWritable();
+public class NeighbourMapper extends MapReduceBase implements Mapper<Text, Text, IntWritable, IntWritable> {
 
-	public void map(Text key, Text value, Context context) throws IOException, InterruptedException {
-		u.set(Long.parseLong(key.toString()));
-		v.set(Long.parseLong(value.toString()));
-		context.write(u, v);;
-	}	
+    private final IntWritable u = new IntWritable();
+    private final IntWritable v = new IntWritable();
+
+    private int numberOfKeys = 0;
+
+    @Override
+    public void map(Text key, Text value,
+                    OutputCollector<IntWritable, IntWritable> output, Reporter reporter)
+            throws IOException {
+        numberOfKeys++;
+
+        u.set(Integer.parseInt(key.toString()));
+        v.set(Integer.parseInt(value.toString()));
+        output.collect(u, v);
+
+        if (numberOfKeys % 10 == 0) {
+            reporter.progress();
+        }
+    }
 }

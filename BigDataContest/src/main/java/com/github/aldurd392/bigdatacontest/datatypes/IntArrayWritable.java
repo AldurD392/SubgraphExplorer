@@ -1,17 +1,18 @@
-package CustomTypes;
+package com.github.aldurd392.bigdatacontest.datatypes;
 
 import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.IntWritable;
 
-public class LongWritableArray extends ArrayWritable{
+public class IntArrayWritable extends ArrayWritable {
 	 
-    public LongWritableArray(){
-    		super(LongWritable.class);
-    	}
+    public IntArrayWritable() {
+        super(IntWritable.class);
+    }
     
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+
         for (String s : super.toStrings()) {
             sb.append(s).append(" ");
         }

@@ -7,8 +7,6 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
 
-import io.netty.handler.codec.http.HttpHeaders.Values;
-
 import java.io.IOException;
 import java.util.*;
 

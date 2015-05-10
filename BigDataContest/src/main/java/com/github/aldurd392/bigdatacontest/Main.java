@@ -7,8 +7,6 @@ package com.github.aldurd392.bigdatacontest;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
@@ -91,10 +89,18 @@ public class Main extends Configured implements Tool {
         return subgraphJob;
     }
 
+    private String getInputFolder(int i) {
+        return TEMPORARY_OUTPUT_DIRECTORY + "_" + i;
+    }
+
+    private String getOuputFolder(int i) {
+        return TEMPORARY_OUTPUT_DIRECTORY + "_" + (++i);
+    }
+
     private Job iSubgraphJob(int i, Configuration conf) throws IOException {
-        String input = TEMPORARY_OUTPUT_DIRECTORY + "_" + i;
+        String input = getInputFolder(i);
         String jobName = SUBGRAPHER_NAME + "_" + i;
-        String output = TEMPORARY_OUTPUT_DIRECTORY + "_" + (++i);
+        String output = getOuputFolder(i);
 
         return subgraphJob(conf, input, output, jobName);
     }
@@ -109,24 +115,15 @@ public class Main extends Configured implements Tool {
         controller.addJob(neighbourhoodControlledJob);
 
         // Next rounds: ------ Build the subgraph -------
-        int i = 0;
-        Job subgraphJob = iSubgraphJob(i, conf);
+        int i = -1;
 
-        ArrayList<ControlledJob> dependencies = new ArrayList<>(1);
-        dependencies.add(neighbourhoodControlledJob);
-//        List<ControlledJob> dependencies_clone = new ArrayList<>(dependencies.size());
-//        Collections.copy(dependencies_clone, dependencies);
-        ControlledJob subgraphControlledJob = new ControlledJob(subgraphJob, dependencies);
-        controller.addJob(subgraphControlledJob);
+        ControlledJob oldSubgraphJob = neighbourhoodControlledJob;
+        boolean results;
 
-        ControlledJob oldSubgraphJob = subgraphControlledJob;
-        
-        while (!Utils.resultFound()) {
-            dependencies = new ArrayList<>(1);
+        while (!(results = Utils.resultFound()) && Utils.previousResults(getOuputFolder(i))) {
+            ArrayList<ControlledJob> dependencies = new ArrayList<>(1);
             dependencies.add(oldSubgraphJob);
             Job newSubgraphJob = iSubgraphJob(++i, conf);
-//            dependencies_clone = new ArrayList<>(dependencies.size());
-//            Collections.copy(dependencies_clone, dependencies);
             ControlledJob newSubgraphControlledJob = new ControlledJob(newSubgraphJob, dependencies);
             controller.addJob(newSubgraphControlledJob);
             
@@ -134,20 +131,17 @@ public class Main extends Configured implements Tool {
             t.start();
 
             while (!controller.allFinished()) {
-                System.out.println("Still running...");
                 Thread.sleep(1000);
             }            
             
             oldSubgraphJob = newSubgraphControlledJob;
         }
 
-//        Thread t = new Thread(controller);
-//        t.start();
-//
-//        while (!controller.allFinished()) {
-//            System.out.println("Still running...");
-//            Thread.sleep(1000);
-//        }
+        if (results) {
+            System.out.println("We have found the result! :D");
+        } else {
+            System.out.println("Sorry, no results are possible. :(");
+        }
 
         return 0;
     }

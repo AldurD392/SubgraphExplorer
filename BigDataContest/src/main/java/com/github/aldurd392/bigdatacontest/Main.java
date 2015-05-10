@@ -7,6 +7,7 @@ package com.github.aldurd392.bigdatacontest;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
@@ -112,9 +113,12 @@ public class Main extends Configured implements Tool {
         Job subgraphJob = iSubgraphJob(i, conf);
 
         ArrayList<ControlledJob> dependencies = new ArrayList<>(1);
+        List<ControlledJob> dependencies_clone = new ArrayList<>(dependencies.size());
         dependencies.add(neighbourhoodControlledJob);
-        ControlledJob subgraphControlledJob = new ControlledJob(subgraphJob, (List<ControlledJob>) dependencies.clone());
+        Collections.copy(dependencies_clone, dependencies);
+        ControlledJob subgraphControlledJob = new ControlledJob(subgraphJob, dependencies_clone);
         controller.addJob(subgraphControlledJob);
+        dependencies.add(subgraphControlledJob);
 
 //        while (i < 3) {
 //            Job newSubgraphJob = iSubgraphJob(++i, conf);
@@ -125,11 +129,20 @@ public class Main extends Configured implements Tool {
 
         Job newSubgraphJob = iSubgraphJob(++i, conf);
         newSubgraphJob.setOutputFormatClass(TextOutputFormat.class);
-        ControlledJob newSubgraphControlledJob = new ControlledJob(newSubgraphJob, (List<ControlledJob>) dependencies.clone());
+        dependencies_clone = new ArrayList<>(dependencies.size());
+        Collections.copy(dependencies_clone, dependencies);
+        ControlledJob newSubgraphControlledJob = new ControlledJob(newSubgraphJob, dependencies_clone);
         controller.addJob(newSubgraphControlledJob);
         dependencies.add(newSubgraphControlledJob);
 
-        controller.run();
+        Thread t = new Thread(controller);
+        t.start();
+
+        while (!controller.allFinished()) {
+            System.out.println("Still running...");
+            Thread.sleep(1000);
+        }
+
         return 0;
     }
 

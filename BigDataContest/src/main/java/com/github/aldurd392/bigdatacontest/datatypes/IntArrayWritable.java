@@ -22,6 +22,7 @@ public class IntArrayWritable extends ArrayWritable implements WritableComparabl
         return "[" + sb.toString() + "]";
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public int compareTo(Object o) {
         if (o instanceof IntArrayWritable) {

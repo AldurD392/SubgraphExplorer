@@ -35,7 +35,8 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
         }
 
         for (Map.Entry<Integer, Integer> entry: counter.entrySet()) {
-            if (entry.getValue() >= EURISTIC_FACTOR * length) {
+            if (!value.containsKey(entry.getKey()) &&
+                    entry.getValue() >= EURISTIC_FACTOR * length) {
                 set.add(new IntWritable(entry.getKey()));
             }
         }
@@ -53,9 +54,9 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
             nodes.add((IntWritable) w);
         }
 
-        System.out.println("MAPPEEEEER!");
         for (IntWritable node: chooseNodes(value)) {
-            ArrayList<IntWritable> copy = (ArrayList<IntWritable>) nodes.clone();
+            ArrayList<IntWritable> copy = new ArrayList<>(nodes.size());
+            Collections.copy(copy, nodes);
             copy.add(node);
             Collections.sort(copy);
             IntArrayWritable newKey = new IntArrayWritable();

@@ -27,10 +27,8 @@ public class NeighbourReducer extends Reducer<IntWritable,IntWritable,IntArrayWr
         subgraph_array[0] = key;
         subgraph.set(subgraph_array);
 
-
-        Iterator<IntWritable> iterator = value.iterator();
-        while (iterator.hasNext()) {
-            IntWritable i = new IntWritable(iterator.next().get());
+        for (IntWritable aValue : value) {
+            IntWritable i = new IntWritable(aValue.get());
             neighbours_list.add(i);
         }
 

@@ -5,7 +5,6 @@ import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
-import java.util.Iterator;
 
 public class SubgraphReducer extends Reducer<IntArrayWritable,NeighbourhoodMap,IntArrayWritable,NeighbourhoodMap> {
 
@@ -15,13 +14,11 @@ public class SubgraphReducer extends Reducer<IntArrayWritable,NeighbourhoodMap,I
             throws IOException, InterruptedException {
 
         NeighbourhoodMap map = new NeighbourhoodMap();
-        Iterator<NeighbourhoodMap> iterator = values.iterator();
 
-        while (iterator.hasNext()) {
-            map.putAll(iterator.next());
+        for (NeighbourhoodMap value : values) {
+            map.putAll(value);
         }
 
-        System.out.println("REDUCEEEER!");
         context.write(key, map);
     }
 }

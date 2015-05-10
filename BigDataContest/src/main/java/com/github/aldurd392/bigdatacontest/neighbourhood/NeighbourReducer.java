@@ -2,6 +2,7 @@ package com.github.aldurd392.bigdatacontest.neighbourhood;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import org.apache.hadoop.io.IntWritable;
@@ -26,8 +27,10 @@ public class NeighbourReducer extends Reducer<IntWritable,IntWritable,IntArrayWr
         subgraph_array[0] = key;
         subgraph.set(subgraph_array);
 
-        while (value.iterator().hasNext()) {
-            IntWritable i = new IntWritable(value.iterator().next().get());
+
+        Iterator<IntWritable> iterator = value.iterator();
+        while (iterator.hasNext()) {
+            IntWritable i = new IntWritable(iterator.next().get());
             neighbours_list.add(i);
         }
 

@@ -7,6 +7,7 @@ package com.github.aldurd392.bigdatacontest;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
@@ -76,7 +77,7 @@ public class Main extends Configured implements Tool {
         FileOutputFormat.setOutputPath(subgraphJob, new Path(ouput));
 
         subgraphJob.setInputFormatClass(SequenceFileInputFormat.class);
-        subgraphJob.setOutputFormatClass(TextOutputFormat.class);
+        subgraphJob.setOutputFormatClass(SequenceFileOutputFormat.class);
 
         subgraphJob.setMapperClass(SubgraphMapper.class);
         subgraphJob.setReducerClass(SubgraphReducer.class);
@@ -100,9 +101,11 @@ public class Main extends Configured implements Tool {
     @Override
     public int run(String[] args) throws Exception {
         Configuration conf = this.getConf();
+        JobControl controller = new JobControl("BigDataContest");
 
         Job neighbourhoodJob = neighbourhoodJob(conf, args[0]);
         ControlledJob neighbourhoodControlledJob = new ControlledJob(neighbourhoodJob, null);
+        controller.addJob(neighbourhoodControlledJob);
 
         // Next rounds: ------ Build the subgraph -------
         int i = 0;
@@ -110,21 +113,21 @@ public class Main extends Configured implements Tool {
 
         ArrayList<ControlledJob> dependencies = new ArrayList<>(1);
         dependencies.add(neighbourhoodControlledJob);
-        ControlledJob subgraphControlledJob = new ControlledJob(subgraphJob, dependencies);
-
-        while (i < 4) {
-            dependencies.clear();
-            i = i + 1;
-            subgraphJob = iSubgraphJob(i, conf);
-            dependencies.add(subgraphControlledJob);
-            subgraphControlledJob = new ControlledJob(subgraphJob, dependencies);
-        }
-
-        // Job controller -----
-        JobControl controller = new JobControl("BigDataContest");
-
-        controller.addJob(neighbourhoodControlledJob);
+        ControlledJob subgraphControlledJob = new ControlledJob(subgraphJob, (List<ControlledJob>) dependencies.clone());
         controller.addJob(subgraphControlledJob);
+
+//        while (i < 3) {
+//            Job newSubgraphJob = iSubgraphJob(++i, conf);
+//            ControlledJob newSubgraphControlledJob = new ControlledJob(newSubgraphJob, (List<ControlledJob>) dependencies.clone());
+//            controller.addJob(newSubgraphControlledJob);
+//            dependencies.add(newSubgraphControlledJob);
+//        }
+
+        Job newSubgraphJob = iSubgraphJob(++i, conf);
+        newSubgraphJob.setOutputFormatClass(TextOutputFormat.class);
+        ControlledJob newSubgraphControlledJob = new ControlledJob(newSubgraphJob, (List<ControlledJob>) dependencies.clone());
+        controller.addJob(newSubgraphControlledJob);
+        dependencies.add(newSubgraphControlledJob);
 
         controller.run();
         return 0;

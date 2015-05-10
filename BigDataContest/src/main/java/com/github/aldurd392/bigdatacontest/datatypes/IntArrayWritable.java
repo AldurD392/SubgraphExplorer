@@ -42,7 +42,7 @@ public class IntArrayWritable extends ArrayWritable implements WritableComparabl
             }
         }
 
-        return 0;
+        return 1;
     }
 }
 

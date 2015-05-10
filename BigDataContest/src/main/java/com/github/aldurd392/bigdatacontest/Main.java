@@ -15,6 +15,7 @@ import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import com.github.aldurd392.bigdatacontest.neighbourhood.NeighbourMapper;
 import com.github.aldurd392.bigdatacontest.subgrapher.SubgraphMapper;
 import com.github.aldurd392.bigdatacontest.subgrapher.SubgraphReducer;
+import com.github.aldurd392.bigdatacontest.utils.Utils;
 import com.github.aldurd392.bigdatacontest.neighbourhood.NeighbourReducer;
 
 import org.apache.hadoop.conf.Configuration;
@@ -112,32 +113,41 @@ public class Main extends Configured implements Tool {
         Job subgraphJob = iSubgraphJob(i, conf);
 
         ArrayList<ControlledJob> dependencies = new ArrayList<>(1);
-        List<ControlledJob> dependencies_clone = new ArrayList<>(dependencies.size());
         dependencies.add(neighbourhoodControlledJob);
-        Collections.copy(dependencies_clone, dependencies);
-        ControlledJob subgraphControlledJob = new ControlledJob(subgraphJob, dependencies_clone);
+//        List<ControlledJob> dependencies_clone = new ArrayList<>(dependencies.size());
+//        Collections.copy(dependencies_clone, dependencies);
+        ControlledJob subgraphControlledJob = new ControlledJob(subgraphJob, dependencies);
         controller.addJob(subgraphControlledJob);
-        dependencies.add(subgraphControlledJob);
 
         ControlledJob oldSubgraphJob = subgraphControlledJob;
-        while (i < 4) {
-            dependencies.clear();
+        
+        while (!Utils.resultFound()) {
+            dependencies = new ArrayList<>(1);
             dependencies.add(oldSubgraphJob);
             Job newSubgraphJob = iSubgraphJob(++i, conf);
-            dependencies_clone = new ArrayList<>(dependencies.size());
-            Collections.copy(dependencies_clone, dependencies);
-            ControlledJob newSubgraphControlledJob = new ControlledJob(newSubgraphJob, dependencies_clone);
+//            dependencies_clone = new ArrayList<>(dependencies.size());
+//            Collections.copy(dependencies_clone, dependencies);
+            ControlledJob newSubgraphControlledJob = new ControlledJob(newSubgraphJob, dependencies);
             controller.addJob(newSubgraphControlledJob);
+            
+            Thread t = new Thread(controller);
+            t.start();
+
+            while (!controller.allFinished()) {
+                System.out.println("Still running...");
+                Thread.sleep(1000);
+            }            
+            
             oldSubgraphJob = newSubgraphControlledJob;
         }
 
-        Thread t = new Thread(controller);
-        t.start();
-
-        while (!controller.allFinished()) {
-            System.out.println("Still running...");
-            Thread.sleep(1000);
-        }
+//        Thread t = new Thread(controller);
+//        t.start();
+//
+//        while (!controller.allFinished()) {
+//            System.out.println("Still running...");
+//            Thread.sleep(1000);
+//        }
 
         return 0;
     }

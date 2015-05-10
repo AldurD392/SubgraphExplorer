@@ -2,9 +2,12 @@ package com.github.aldurd392.bigdatacontest.subgrapher;
 
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
+
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
+
+import io.netty.handler.codec.http.HttpHeaders.Values;
 
 import java.io.IOException;
 import java.util.*;
@@ -23,6 +26,10 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
 
             for (Writable w: neighbours.get()) {
                 IntWritable i = (IntWritable) w;
+                
+                if(value.containsKey(i)){
+                		continue;
+                }
                 int _i = i.get();
 
                 Integer c = counter.get(_i);
@@ -35,11 +42,11 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
         }
 
         for (Map.Entry<Integer, Integer> entry: counter.entrySet()) {
-            if (!value.containsKey(entry.getKey()) &&
-                    entry.getValue() >= EURISTIC_FACTOR * length) {
+            if (entry.getValue() >= EURISTIC_FACTOR * length) {
                 set.add(new IntWritable(entry.getKey()));
             }
         }
+        
 
         return set;
     }
@@ -54,14 +61,13 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
             nodes.add((IntWritable) w);
         }
 
-        System.out.println("MAPPEEEEER! : " + key + " " + chooseNodes(value));
         for (IntWritable node: chooseNodes(value)) {
-            ArrayList<IntWritable> copy = new ArrayList<>(nodes.size());
-            Collections.copy(copy, nodes);
+            ArrayList<IntWritable> copy = new ArrayList<>(nodes);
             copy.add(node);
             Collections.sort(copy);
             IntArrayWritable newKey = new IntArrayWritable();
             newKey.set(copy.toArray(new IntWritable[copy.size()]));
+            
             context.write(newKey, value);
         }
     }

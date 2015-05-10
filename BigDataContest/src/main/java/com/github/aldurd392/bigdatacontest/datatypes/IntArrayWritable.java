@@ -5,7 +5,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
-public class IntArrayWritable extends ArrayWritable implements WritableComparable {
+public class IntArrayWritable extends ArrayWritable implements WritableComparable<IntArrayWritable> {
 	 
     public IntArrayWritable() {
         super(IntWritable.class);
@@ -24,27 +24,26 @@ public class IntArrayWritable extends ArrayWritable implements WritableComparabl
     }
 
     @Override
-    public int compareTo(Object o) {
-        if (o instanceof IntArrayWritable) {
-            IntArrayWritable other = (IntArrayWritable) o;
+    public int compareTo(IntArrayWritable o) {
+        Writable[] our_writables = this.get();
+        Writable[] other_writables = o.get();
 
-            Writable[] our_writables = this.get();
-            Writable[] other_writables = other.get();
-
-            for (int i = 0; i < other_writables.length; i++) {
-                IntWritable w = (IntWritable) our_writables[i];
-                IntWritable x = (IntWritable) other_writables[i];
-
-                if (x.get() == w.get()) {
-                    continue;
-                }
-
-                return x.get() > w.get() ? -1 : 1;
-            }
-            return 0;
+        if (other_writables.length != our_writables.length) {
+            return other_writables.length > our_writables.length ? -1 : 1;
         }
 
-        return 1;
+        for (int i = 0; i < other_writables.length; i++) {
+            IntWritable w = (IntWritable) our_writables[i];
+            IntWritable x = (IntWritable) other_writables[i];
+
+            if (x.get() == w.get()) {
+                continue;
+            }
+
+            return x.get() > w.get() ? -1 : 1;
+        }
+
+        return 0;
     }
 }
 

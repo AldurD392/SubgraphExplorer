@@ -10,6 +10,7 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashSet;
 
 /**
@@ -46,13 +47,13 @@ public class Utils {
         FileSystem fs = FileSystem.get(conf);
         Path outFile = new Path(pathResultFile + "/" + resultFileName);
 
-        if (fs.exists(outFile)) {
-            System.out.println("Result File Already Exists!!!!!!");
-            System.out.println("RESULT not written: " + result);
-            System.exit(0);
+        FSDataOutputStream out;
+        if (!fs.exists(outFile)) {
+            out = fs.create(outFile);
+            out.close();
         }
 
-        FSDataOutputStream out = fs.create(outFile);
+        out = fs.create(new Path(pathResultFile + "/" + result.hashCode()));
         out.writeChars(result.toString());
         out.close();
     }

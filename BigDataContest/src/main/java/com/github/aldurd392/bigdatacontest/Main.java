@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import com.github.aldurd392.bigdatacontest.neighbourhood.NeighbourMapper;
+import com.github.aldurd392.bigdatacontest.reader.ReaderMapper;
 import com.github.aldurd392.bigdatacontest.subgrapher.SubgraphMapper;
 import com.github.aldurd392.bigdatacontest.subgrapher.SubgraphReducer;
 import com.github.aldurd392.bigdatacontest.utils.Utils;
@@ -23,6 +24,7 @@ import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;
 import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;
@@ -36,6 +38,7 @@ public class Main extends Configured implements Tool {
     private static Configuration mConfig;
 
     private final static String TEMPORARY_OUTPUT_DIRECTORY = "output";
+    private final static String NEIGHBOURHOOD = "neighbourhood";
     private final static String SUBGRAPHER_NAME = "subgrapher";
 
     public static void main(String[] args)
@@ -51,7 +54,7 @@ public class Main extends Configured implements Tool {
         neighbourhoodJob.setJarByClass(Main.class);
 
         FileInputFormat.addInputPath(neighbourhoodJob, new Path(input));
-        FileOutputFormat.setOutputPath(neighbourhoodJob, new Path(TEMPORARY_OUTPUT_DIRECTORY + "_" + 0));
+        FileOutputFormat.setOutputPath(neighbourhoodJob, new Path(NEIGHBOURHOOD));
 
         neighbourhoodJob.setMapperClass(NeighbourMapper.class);
         neighbourhoodJob.setReducerClass(NeighbourReducer.class);
@@ -72,19 +75,30 @@ public class Main extends Configured implements Tool {
         subgraphJob.setJobName(jobName);
         subgraphJob.setJarByClass(IntArrayWritable.class);
 
-        FileInputFormat.setInputPaths(subgraphJob, new Path(input));
         FileOutputFormat.setOutputPath(subgraphJob, new Path(ouput));
 
         subgraphJob.setInputFormatClass(SequenceFileInputFormat.class);
         subgraphJob.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-        subgraphJob.setMapperClass(SubgraphMapper.class);
         subgraphJob.setReducerClass(SubgraphReducer.class);
 
-        subgraphJob.setMapOutputKeyClass(IntArrayWritable.class);
+        subgraphJob.setMapOutputKeyClass(IntWritable.class);
         subgraphJob.setMapOutputValueClass(NeighbourhoodMap.class);
         subgraphJob.setOutputKeyClass(IntArrayWritable.class);
         subgraphJob.setOutputValueClass(NeighbourhoodMap.class);
+
+        MultipleInputs.addInputPath(
+                subgraphJob,
+                new Path(NEIGHBOURHOOD),
+                SequenceFileInputFormat.class,
+                ReaderMapper.class
+        );
+        MultipleInputs.addInputPath(
+                subgraphJob,
+                new Path(input),
+                SequenceFileInputFormat.class,
+                SubgraphMapper.class
+        );
 
         return subgraphJob;
     }
@@ -98,7 +112,14 @@ public class Main extends Configured implements Tool {
     }
 
     private Job iSubgraphJob(int i, Configuration conf) throws IOException {
-        String input = getInputFolder(i);
+        String input;
+
+        if (i == 0) {
+            input = NEIGHBOURHOOD;
+        } else {
+            input = getInputFolder(i);
+        }
+
         String jobName = SUBGRAPHER_NAME + "_" + i;
         String output = getOuputFolder(i);
 

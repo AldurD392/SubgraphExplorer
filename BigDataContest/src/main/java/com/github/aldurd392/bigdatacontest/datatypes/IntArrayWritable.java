@@ -40,6 +40,7 @@ public class IntArrayWritable extends ArrayWritable implements WritableComparabl
 
                 return x.get() > w.get() ? -1 : 1;
             }
+            return 0;
         }
 
         return 1;

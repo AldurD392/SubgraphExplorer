@@ -21,7 +21,7 @@ public class SubgraphReducer extends Reducer<IntArrayWritable,NeighbourhoodMap,I
             map.putAll(iterator.next());
         }
 
-        System.out.println("REDUCEEEER!");
+        System.out.println("REDUCEEEER!: " + key + " " + map);
         context.write(key, map);
     }
 }

@@ -116,18 +116,15 @@ public class Main extends Configured implements Tool {
         ControlledJob subgraphControlledJob = new ControlledJob(subgraphJob, (List<ControlledJob>) dependencies.clone());
         controller.addJob(subgraphControlledJob);
 
-//        while (i < 3) {
-//            Job newSubgraphJob = iSubgraphJob(++i, conf);
-//            ControlledJob newSubgraphControlledJob = new ControlledJob(newSubgraphJob, (List<ControlledJob>) dependencies.clone());
-//            controller.addJob(newSubgraphControlledJob);
-//            dependencies.add(newSubgraphControlledJob);
-//        }
-
-        Job newSubgraphJob = iSubgraphJob(++i, conf);
-        newSubgraphJob.setOutputFormatClass(TextOutputFormat.class);
-        ControlledJob newSubgraphControlledJob = new ControlledJob(newSubgraphJob, (List<ControlledJob>) dependencies.clone());
-        controller.addJob(newSubgraphControlledJob);
-        dependencies.add(newSubgraphControlledJob);
+        ControlledJob oldSubgraphJob = subgraphControlledJob;
+        while (i < 4) {
+        		dependencies.clear();
+        		dependencies.add(oldSubgraphJob);
+            Job newSubgraphJob = iSubgraphJob(++i, conf);
+            ControlledJob newSubgraphControlledJob = new ControlledJob(newSubgraphJob, (List<ControlledJob>) dependencies.clone());
+            controller.addJob(newSubgraphControlledJob);
+            oldSubgraphJob = newSubgraphControlledJob;
+        }
 
         controller.run();
         return 0;

@@ -29,7 +29,6 @@ import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;
 import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -120,20 +119,17 @@ public class Main extends Configured implements Tool {
         controller.addJob(subgraphControlledJob);
         dependencies.add(subgraphControlledJob);
 
-//        while (i < 3) {
-//            Job newSubgraphJob = iSubgraphJob(++i, conf);
-//            ControlledJob newSubgraphControlledJob = new ControlledJob(newSubgraphJob, (List<ControlledJob>) dependencies.clone());
-//            controller.addJob(newSubgraphControlledJob);
-//            dependencies.add(newSubgraphControlledJob);
-//        }
-
-        Job newSubgraphJob = iSubgraphJob(++i, conf);
-        newSubgraphJob.setOutputFormatClass(TextOutputFormat.class);
-        dependencies_clone = new ArrayList<>(dependencies.size());
-        Collections.copy(dependencies_clone, dependencies);
-        ControlledJob newSubgraphControlledJob = new ControlledJob(newSubgraphJob, dependencies_clone);
-        controller.addJob(newSubgraphControlledJob);
-        dependencies.add(newSubgraphControlledJob);
+        ControlledJob oldSubgraphJob = subgraphControlledJob;
+        while (i < 4) {
+            dependencies.clear();
+            dependencies.add(oldSubgraphJob);
+            Job newSubgraphJob = iSubgraphJob(++i, conf);
+            dependencies_clone = new ArrayList<>(dependencies.size());
+            Collections.copy(dependencies_clone, dependencies);
+            ControlledJob newSubgraphControlledJob = new ControlledJob(newSubgraphJob, dependencies_clone);
+            controller.addJob(newSubgraphControlledJob);
+            oldSubgraphJob = newSubgraphControlledJob;
+        }
 
         Thread t = new Thread(controller);
         t.start();

@@ -54,6 +54,7 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
             nodes.add((IntWritable) w);
         }
 
+        System.out.println("MAPPEEEEER! : " + key + " " + chooseNodes(value));
         for (IntWritable node: chooseNodes(value)) {
             ArrayList<IntWritable> copy = new ArrayList<>(nodes.size());
             Collections.copy(copy, nodes);

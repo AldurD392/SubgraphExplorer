@@ -2,7 +2,6 @@ package com.github.aldurd392.bigdatacontest.neighbourhood;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import org.apache.hadoop.io.IntWritable;

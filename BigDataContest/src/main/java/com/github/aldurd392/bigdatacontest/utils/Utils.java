@@ -11,10 +11,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 
 /**
  * BigDataContest - com.github.aldurd392.bigdatacontest.utils

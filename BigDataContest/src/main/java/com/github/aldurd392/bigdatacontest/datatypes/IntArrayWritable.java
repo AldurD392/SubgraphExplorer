@@ -19,10 +19,10 @@ public class IntArrayWritable extends ArrayWritable implements WritableComparabl
             sb.append(s).append(" ");
         }
 
-        return "[" + sb.toString() + "]";
+        String fromSb = sb.toString();
+        return "[" + fromSb.substring(0, fromSb.length() - 1) + "]";
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
     public int compareTo(Object o) {
         if (o instanceof IntArrayWritable) {

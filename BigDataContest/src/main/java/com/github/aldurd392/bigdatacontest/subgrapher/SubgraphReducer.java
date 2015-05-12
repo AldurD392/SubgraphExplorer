@@ -1,5 +1,6 @@
 package com.github.aldurd392.bigdatacontest.subgrapher;
 
+import com.github.aldurd392.bigdatacontest.Main;
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;import com.github.aldurd392.bigdatacontest.utils.Utils;
 
@@ -12,7 +13,6 @@ import java.util.ArrayList;
 
 public class SubgraphReducer extends Reducer<IntWritable,NeighbourhoodMap,IntArrayWritable,NeighbourhoodMap> {
 
-    private static final int RHO = 2;
     @Override
     protected void reduce(IntWritable key, Iterable<NeighbourhoodMap> values, Context context)
             throws IOException, InterruptedException {
@@ -35,7 +35,7 @@ public class SubgraphReducer extends Reducer<IntWritable,NeighbourhoodMap,IntArr
         IntWritable[] intWritables = list.toArray(new IntWritable[list.size()]);
         intArrayWritable.set(intWritables);
         
-        if (Utils.density(map) >= RHO){
+        if (Utils.density(map) >= Main.inputs.getRho()){
             Utils.writeResultOnFile(intArrayWritable);
         }
 

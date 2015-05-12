@@ -8,12 +8,14 @@ package com.github.aldurd392.bigdatacontest;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import com.beust.jcommander.*;
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import com.github.aldurd392.bigdatacontest.neighbourhood.NeighbourMapper;
 import com.github.aldurd392.bigdatacontest.reader.ReaderMapper;
 import com.github.aldurd392.bigdatacontest.subgrapher.SubgraphMapper;
 import com.github.aldurd392.bigdatacontest.subgrapher.SubgraphReducer;
+import com.github.aldurd392.bigdatacontest.utils.ArgsParser;
 import com.github.aldurd392.bigdatacontest.utils.Utils;
 import com.github.aldurd392.bigdatacontest.neighbourhood.NeighbourReducer;
 
@@ -40,11 +42,14 @@ public class Main extends Configured implements Tool {
     private final static String TEMPORARY_OUTPUT_DIRECTORY = "output";
     private final static String NEIGHBOURHOOD = "neighbourhood";
     private final static String SUBGRAPHER_NAME = "subgrapher";
+    public final static ArgsParser inputs = new ArgsParser(); 
 
-    public static void main(String[] args)
-            throws Exception {
-        int res = ToolRunner.run(new Configuration(), new Main(), args);
-        System.exit(res);
+    public static void main(String[] args) throws Exception {
+    	
+	    	new JCommander(inputs, args);
+	    	
+	    	int res = ToolRunner.run(new Configuration(), new Main(), args);
+	    System.exit(res);
     }
 
     private Job neighbourhoodJob(Configuration conf, String input) throws IOException {
@@ -131,15 +136,16 @@ public class Main extends Configured implements Tool {
         Configuration conf = this.getConf();
         JobControl controller = new JobControl("BigDataContest");
 
-        Job neighbourhoodJob = neighbourhoodJob(conf, args[0]);
+        Job neighbourhoodJob = neighbourhoodJob(conf, inputs.getInputfilePath());
         ControlledJob neighbourhoodControlledJob = new ControlledJob(neighbourhoodJob, null);
         controller.addJob(neighbourhoodControlledJob);
 
         int i = -1;
         ControlledJob oldSubgraphJob = neighbourhoodControlledJob;
-        boolean results;
+        boolean results = false;
+        boolean condition;
 
-        while (!(results = Utils.resultFound()) && Utils.previousResults(getOuputFolder(i))) {
+        do{
             ArrayList<ControlledJob> dependencies = new ArrayList<>(1);
             dependencies.add(oldSubgraphJob);
             Job newSubgraphJob = iSubgraphJob(++i, conf);
@@ -154,13 +160,25 @@ public class Main extends Configured implements Tool {
             }            
             
             oldSubgraphJob = newSubgraphControlledJob;
-        }
+            
+            if(inputs.iterMode() > 0){
+            		condition = (i < inputs.iterMode() - 1);
+            }
+            else {
+            		condition = (!(results = Utils.resultFound()) && Utils.previousResults(getOuputFolder(i)));
+            }
+            
+        } while (condition);
 
-        if (results) {
-            System.out.println("We have found the result! :D");
-        } else {
-            System.out.println("Sorry, no results are possible. :(");
+        if (inputs.iterMode() > 0){
+        		System.out.println("Iterations finished");
         }
+        else if(results) {
+        		System.out.println("We have found the result! :D");
+        	}
+	    else {
+	    		System.out.println("Sorry, no results are possible. :(");
+	    }
 
         return 0;
     }

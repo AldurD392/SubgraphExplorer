@@ -2,6 +2,7 @@ package com.github.aldurd392.bigdatacontest.subgrapher;
 
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
+import com.github.aldurd392.bigdatacontest.Main;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
@@ -12,9 +13,11 @@ import java.util.*;
 
 public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, IntWritable, NeighbourhoodMap> {
 
-    private static final double EURISTIC_FACTOR = 3.0/4.0;
-
+	private Random rndm = new Random();
+	
+	
     private static IntWritable chooseNodes(NeighbourhoodMap value) {
+    	
         HashMap<IntWritable, Integer> counter = new HashMap<>();
         int length = value.size();
 
@@ -47,7 +50,7 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
             }
         }
 
-        if (maxValue >= EURISTIC_FACTOR * length) {
+        if (maxValue >= Main.inputs.getEuristicFactor() * length) {
             return maxKey;
         }
 
@@ -58,7 +61,13 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
     public void map(IntArrayWritable key, NeighbourhoodMap value,
                     Context context)
             throws IOException, InterruptedException {
+    	
+    		if(Main.inputs.probMode() && rndm.nextDouble() > Main.inputs.getEuristicFactor()){
+    			return;
+    		}
+    		
         IntWritable newKey = chooseNodes(value);
+        
         if (newKey != null) {
             context.write(newKey, value);
         }

@@ -17,9 +17,9 @@ import java.util.HashSet;
  * Created by aldur on 10/05/15.
  */
 public class Utils {
-    public static final String resultFileName = "_FOUND";
-    public static final String pathResultFile = "result";
-
+	public static final String resultFileName = "_FOUND";
+	public static final String pathResultFile = "result";
+	
     public static double density(NeighbourhoodMap neighbourhood) {
         HashSet<Integer> nodes_set = new HashSet<>();
         for (Writable w : neighbourhood.keySet()) {
@@ -42,27 +42,25 @@ public class Utils {
     }
 
     public static void writeResultOnFile(IntArrayWritable result) throws IOException {
-        Configuration conf = new Configuration();
-        FileSystem fs = FileSystem.get(conf);
-        Path outFile = new Path(pathResultFile + "/" + resultFileName);
-
-        if (fs.exists(outFile)) {
-            System.out.println("Result File Already Exists!!!!!!");
-            System.out.println("RESULT not written: " + result);
-            System.exit(0);
-        }
-
-        FSDataOutputStream out = fs.create(outFile);
-        out.writeChars(result.toString());
-        out.close();
+	    	Configuration conf = new Configuration();
+	    	FileSystem fs = FileSystem.get(conf);
+	    	Path outFile = new Path(pathResultFile + "/" + resultFileName);
+	    	if (fs.exists(outFile)) {
+	    		  System.out.println("Result File Already Exists!!!!!!");
+	    		  System.out.println("RESULT not written: " + result);
+	    		  System.exit(0);
+	    	}
+	    	FSDataOutputStream out = fs.create(outFile);
+	    	out.writeChars(result.toString());
+	    	out.close();
     }
 
     public static boolean resultFound() throws IOException {
-        Configuration conf = new Configuration();
-        FileSystem fs = FileSystem.get(conf);
-        Path resultFile = new Path(pathResultFile + "/" + resultFileName);
-        return fs.exists(resultFile);
-    }
+	    	Configuration conf = new Configuration();
+	    	FileSystem fs = FileSystem.get(conf);
+	    	Path resultFile = new Path(pathResultFile + "/" + resultFileName);
+	    	return fs.exists(resultFile);
+	}
 
     public static boolean previousResults(String currentOuputDirectory) throws IOException {
         Configuration conf = new Configuration();

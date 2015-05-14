@@ -35,11 +35,24 @@ public class NeighbourMapper extends Mapper<Text, Text, IntWritable, IntWritable
     private final IntWritable u = new IntWritable();
     private final IntWritable v = new IntWritable();
 
+    /*
+    We require the input file to be formatted as follows:
+    - a\tb means an undirected edge between a and b.
+    This edge has to appear only once:
+    i.e. there must not be b\t a in the input file.
+     */
     @Override
     public void map(Text key, Text value, Context context)
-                     throws IOException, InterruptedException  {
+            throws IOException, InterruptedException {
+        // We ignore lines starting with "#"
+        if (key.toString().startsWith("#")) {
+            return;
+        }
+
         u.set(Integer.parseInt(key.toString()));
         v.set(Integer.parseInt(value.toString()));
+
         context.write(u, v);
+        context.write(v, u);
     }
 }

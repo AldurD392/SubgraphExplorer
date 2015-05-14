@@ -1,15 +1,15 @@
 #!/bin/sh
 
-NEIGHBOURS="Output/Neighbours.txt"
-ITER_PART="Output/Iter_"
-TARGET="Output/FOUND"
+NEIGHBOURS="../Output/Neighbours.txt"
+ITER_PART="../Output/Iter_"
+TARGET="../Output/FOUND"
 
 mkdir -p "Output"
 
 echo "First round: find neighbours"
 
 if [ ! -f $NEIGHBOURS  ]; then
-    cat Input/$1 | Streamer/NeighbourMapper.py | sort -n | Streamer/NeighbourReducer.py > $NEIGHBOURS
+    cat ../Input/$1 | ./NeighbourMapper.py | sort -n | ./NeighbourReducer.py > $NEIGHBOURS
 fi
 
 i=0
@@ -26,7 +26,7 @@ while [[ ! -f $TARGET ]]; do
 
     if [ ! -f $CURRENT_FILE ]; then
         echo "$old_i""-th round. Iterating..."
-        cat $OLD_FILE | Streamer/IterMapper.py | sort -k 1 | Streamer/IterReducer.py > $CURRENT_FILE
+        cat $OLD_FILE | ./IterMapper.py | sort -k 1 | ./IterReducer.py > $CURRENT_FILE
     else
         echo "Skipping ""$old_i""-th round..."
     fi

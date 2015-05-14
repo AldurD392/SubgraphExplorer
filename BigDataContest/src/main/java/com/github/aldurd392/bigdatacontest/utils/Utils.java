@@ -42,17 +42,19 @@ public class Utils {
     }
 
     public static void writeResultOnFile(IntArrayWritable result) throws IOException {
-	    	Configuration conf = new Configuration();
-	    	FileSystem fs = FileSystem.get(conf);
-	    	Path outFile = new Path(pathResultFile + "/" + resultFileName);
-	    	if (fs.exists(outFile)) {
-	    		  System.out.println("Result File Already Exists!!!!!!");
-	    		  System.out.println("RESULT not written: " + result);
-	    		  System.exit(0);
-	    	}
-	    	FSDataOutputStream out = fs.create(outFile);
-	    	out.writeChars(result.toString());
-	    	out.close();
+        Configuration conf = new Configuration();
+        FileSystem fs = FileSystem.get(conf);
+        Path outFile = new Path(pathResultFile + "/" + resultFileName);
+
+        FSDataOutputStream out;
+        if (!fs.exists(outFile)) {
+            out = fs.create(outFile);
+            out.close();
+        }
+
+        out = fs.create(new Path(pathResultFile + "/" + result.hashCode()));
+        out.writeChars(result.toString());
+        out.close();
     }
 
     public static boolean resultFound() throws IOException {

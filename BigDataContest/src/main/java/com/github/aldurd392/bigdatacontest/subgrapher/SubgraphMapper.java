@@ -2,6 +2,7 @@ package com.github.aldurd392.bigdatacontest.subgrapher;
 
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
+import com.github.aldurd392.bigdatacontest.Main;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
@@ -10,13 +11,14 @@ import org.apache.hadoop.mapreduce.Mapper;
 import java.io.IOException;
 import java.util.*;
 
-public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, IntArrayWritable, NeighbourhoodMap> {
+public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, IntWritable, NeighbourhoodMap> {
 
-    private static final double EURISTIC_FACTOR = 3.0/4.0;
-
-    private static Set<IntWritable> chooseNodes(NeighbourhoodMap value) {
-        Set<IntWritable> set = new HashSet<>();
-        HashMap<Integer, Integer> counter = new HashMap<>();
+	private Random rndm = new Random();
+	
+	
+    private static IntWritable chooseNodes(NeighbourhoodMap value) {
+    	
+        HashMap<IntWritable, Integer> counter = new HashMap<>();
         int length = value.size();
 
         for (Writable writable: value.values()) {
@@ -25,47 +27,48 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
             for (Writable w: neighbours.get()) {
                 IntWritable i = (IntWritable) w;
                 
-                if(value.containsKey(i)){
-                		continue;
+                if (value.containsKey(i)){
+                    continue;
                 }
-                int _i = i.get();
 
-                Integer c = counter.get(_i);
+                Integer c = counter.get(i);
                 if (c == null) {
-                    counter.put(_i, 1);
+                    counter.put(i, 1);
                 } else {
-                    counter.put(_i, c + 1);
+                    counter.put(i, c + 1);
                 }
             }
         }
 
-        for (Map.Entry<Integer, Integer> entry: counter.entrySet()) {
-            if (entry.getValue() >= EURISTIC_FACTOR * length) {
-                set.add(new IntWritable(entry.getKey()));
+        Integer maxValue = Integer.MIN_VALUE;
+        IntWritable maxKey = null;
+
+        for (Map.Entry<IntWritable, Integer> entry: counter.entrySet()) {
+            if (entry.getValue() > maxValue) {
+                maxValue = entry.getValue();
+                maxKey = entry.getKey();
             }
         }
-        
 
-        return set;
+        if (maxValue >= Main.inputs.getEuristicFactor() * length) {
+            return maxKey;
+        }
+
+        return null;
     }
 
     @Override
     public void map(IntArrayWritable key, NeighbourhoodMap value,
                     Context context)
             throws IOException, InterruptedException {
-
-        ArrayList<IntWritable> nodes = new ArrayList<>();
-        for (Writable w: key.get()) {
-            nodes.add((IntWritable) w);
-        }
-
-        for (IntWritable node: chooseNodes(value)) {
-            ArrayList<IntWritable> copy = new ArrayList<>(nodes);
-            copy.add(node);
-            Collections.sort(copy);
-            IntArrayWritable newKey = new IntArrayWritable();
-            newKey.set(copy.toArray(new IntWritable[copy.size()]));
-            
+    	
+    		if(Main.inputs.probMode() && rndm.nextDouble() > Main.inputs.getEuristicFactor()){
+    			return;
+    		}
+    		
+        IntWritable newKey = chooseNodes(value);
+        
+        if (newKey != null) {
             context.write(newKey, value);
         }
     }

@@ -8,11 +8,14 @@ package com.github.aldurd392.bigdatacontest;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import com.beust.jcommander.*;
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import com.github.aldurd392.bigdatacontest.neighbourhood.NeighbourMapper;
+import com.github.aldurd392.bigdatacontest.reader.ReaderMapper;
 import com.github.aldurd392.bigdatacontest.subgrapher.SubgraphMapper;
 import com.github.aldurd392.bigdatacontest.subgrapher.SubgraphReducer;
+import com.github.aldurd392.bigdatacontest.utils.ArgsParser;
 import com.github.aldurd392.bigdatacontest.utils.Utils;
 import com.github.aldurd392.bigdatacontest.neighbourhood.NeighbourReducer;
 
@@ -23,6 +26,7 @@ import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;
 import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;
@@ -36,12 +40,16 @@ public class Main extends Configured implements Tool {
     private static Configuration mConfig;
 
     private final static String TEMPORARY_OUTPUT_DIRECTORY = "output";
+    private final static String NEIGHBOURHOOD = "neighbourhood";
     private final static String SUBGRAPHER_NAME = "subgrapher";
+    public final static ArgsParser inputs = new ArgsParser(); 
 
-    public static void main(String[] args)
-            throws Exception {
-        int res = ToolRunner.run(new Configuration(), new Main(), args);
-        System.exit(res);
+    public static void main(String[] args) throws Exception {
+    	
+	    	new JCommander(inputs, args);
+	    	
+	    	int res = ToolRunner.run(new Configuration(), new Main(), args);
+	    System.exit(res);
     }
 
     private Job neighbourhoodJob(Configuration conf, String input) throws IOException {
@@ -51,7 +59,7 @@ public class Main extends Configured implements Tool {
         neighbourhoodJob.setJarByClass(Main.class);
 
         FileInputFormat.addInputPath(neighbourhoodJob, new Path(input));
-        FileOutputFormat.setOutputPath(neighbourhoodJob, new Path(TEMPORARY_OUTPUT_DIRECTORY + "_" + 0));
+        FileOutputFormat.setOutputPath(neighbourhoodJob, new Path(NEIGHBOURHOOD));
 
         neighbourhoodJob.setMapperClass(NeighbourMapper.class);
         neighbourhoodJob.setReducerClass(NeighbourReducer.class);
@@ -72,19 +80,30 @@ public class Main extends Configured implements Tool {
         subgraphJob.setJobName(jobName);
         subgraphJob.setJarByClass(IntArrayWritable.class);
 
-        FileInputFormat.setInputPaths(subgraphJob, new Path(input));
         FileOutputFormat.setOutputPath(subgraphJob, new Path(ouput));
 
         subgraphJob.setInputFormatClass(SequenceFileInputFormat.class);
         subgraphJob.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-        subgraphJob.setMapperClass(SubgraphMapper.class);
         subgraphJob.setReducerClass(SubgraphReducer.class);
 
-        subgraphJob.setMapOutputKeyClass(IntArrayWritable.class);
+        subgraphJob.setMapOutputKeyClass(IntWritable.class);
         subgraphJob.setMapOutputValueClass(NeighbourhoodMap.class);
         subgraphJob.setOutputKeyClass(IntArrayWritable.class);
         subgraphJob.setOutputValueClass(NeighbourhoodMap.class);
+
+        MultipleInputs.addInputPath(
+                subgraphJob,
+                new Path(NEIGHBOURHOOD),
+                SequenceFileInputFormat.class,
+                ReaderMapper.class
+        );
+        MultipleInputs.addInputPath(
+                subgraphJob,
+                new Path(input),
+                SequenceFileInputFormat.class,
+                SubgraphMapper.class
+        );
 
         return subgraphJob;
     }
@@ -98,7 +117,14 @@ public class Main extends Configured implements Tool {
     }
 
     private Job iSubgraphJob(int i, Configuration conf) throws IOException {
-        String input = getInputFolder(i);
+        String input;
+
+        if (i == 0) {
+            input = NEIGHBOURHOOD;
+        } else {
+            input = getInputFolder(i);
+        }
+
         String jobName = SUBGRAPHER_NAME + "_" + i;
         String output = getOuputFolder(i);
 
@@ -110,15 +136,16 @@ public class Main extends Configured implements Tool {
         Configuration conf = this.getConf();
         JobControl controller = new JobControl("BigDataContest");
 
-        Job neighbourhoodJob = neighbourhoodJob(conf, args[0]);
+        Job neighbourhoodJob = neighbourhoodJob(conf, inputs.getInputfilePath());
         ControlledJob neighbourhoodControlledJob = new ControlledJob(neighbourhoodJob, null);
         controller.addJob(neighbourhoodControlledJob);
 
         int i = -1;
         ControlledJob oldSubgraphJob = neighbourhoodControlledJob;
-        boolean results;
+        boolean results = false;
+        boolean condition;
 
-        while (!(results = Utils.resultFound()) && Utils.previousResults(getOuputFolder(i))) {
+        do{
             ArrayList<ControlledJob> dependencies = new ArrayList<>(1);
             dependencies.add(oldSubgraphJob);
             Job newSubgraphJob = iSubgraphJob(++i, conf);
@@ -133,13 +160,25 @@ public class Main extends Configured implements Tool {
             }            
             
             oldSubgraphJob = newSubgraphControlledJob;
-        }
+            
+            if(inputs.iterMode() > 0){
+            		condition = (i < inputs.iterMode() - 1);
+            }
+            else {
+            		condition = (!(results = Utils.resultFound()) && Utils.previousResults(getOuputFolder(i)));
+            }
+            
+        } while (condition);
 
-        if (results) {
-            System.out.println("We have found the result! :D");
-        } else {
-            System.out.println("Sorry, no results are possible. :(");
+        if (inputs.iterMode() > 0){
+        		System.out.println("Iterations finished");
         }
+        else if(results) {
+        		System.out.println("We have found the result! :D");
+        	}
+	    else {
+	    		System.out.println("Sorry, no results are possible. :(");
+	    }
 
         return 0;
     }

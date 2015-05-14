@@ -42,5 +42,15 @@ public class ArgsParser {
 	public boolean probMode(){
 		return probMode;
 	}
+	
+	@Parameter(names = "-outNodes", 
+			description = "Number of nodes to emits from SubgraphMapper. This parameter influences the number of merging.",
+			arity = 1
+			)
+	private int outNodes = 1;
+	
+	public int getOutNodes(){
+		return outNodes;
+	}
 
 }

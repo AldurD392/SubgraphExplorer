@@ -16,7 +16,7 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
 	private Random rndm = new Random();
 	
 	
-    private static IntWritable chooseNodes(NeighbourhoodMap value) {
+    private static ArrayList<IntWritable> chooseNodes(NeighbourhoodMap value) {
     	
         HashMap<IntWritable, Integer> counter = new HashMap<>();
         int length = value.size();
@@ -39,24 +39,38 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
                 }
             }
         }
-
-        Integer maxValue = Integer.MIN_VALUE;
-        IntWritable maxKey = null;
-
+        
+        
+        TreeMap<Integer, ArrayList<IntWritable>> nodes = new TreeMap<>(Collections.reverseOrder());
+        
         for (Map.Entry<IntWritable, Integer> entry: counter.entrySet()) {
-            if (entry.getValue() > maxValue) {
-                maxValue = entry.getValue();
-                maxKey = entry.getKey();
-            }
+        	
+        		if (entry.getValue() > Main.inputs.getEuristicFactor() * length){
+        			if (nodes.containsKey(entry.getValue())){
+        				nodes.get(entry.getValue()).add(entry.getKey());
+        			}
+        			else {
+        				ArrayList<IntWritable> relNodes = new ArrayList<IntWritable>();
+        				relNodes.add(entry.getKey());
+        				nodes.put(entry.getValue(), relNodes);
+        			}
+        		}
+        	
         }
-
-        if (maxValue >= Main.inputs.getEuristicFactor() * length) {
-            return maxKey;
+        
+        ArrayList<IntWritable> finalNodes = new ArrayList<>();
+        
+        for (Map.Entry<Integer, ArrayList<IntWritable>> entry : nodes.entrySet()){
+        		for (IntWritable itNode: entry.getValue()){
+        			finalNodes.add(itNode);
+        			if (finalNodes.size() == Main.inputs.getOutNodes()) return finalNodes;
+        		}
+        		
         }
-
-        return null;
+        return finalNodes;
     }
 
+    
     @Override
     public void map(IntArrayWritable key, NeighbourhoodMap value,
                     Context context)
@@ -66,10 +80,8 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
     			return;
     		}
     		
-        IntWritable newKey = chooseNodes(value);
-        
-        if (newKey != null) {
-            context.write(newKey, value);
+        for (IntWritable node : chooseNodes(value)){
+            context.write(node, value);
         }
     }
 }

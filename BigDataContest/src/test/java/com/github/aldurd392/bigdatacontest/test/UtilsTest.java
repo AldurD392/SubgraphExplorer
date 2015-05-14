@@ -3,9 +3,9 @@ package com.github.aldurd392.bigdatacontest.test;
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import com.github.aldurd392.bigdatacontest.utils.Utils;
-import junit.framework.Assert;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -15,6 +15,8 @@ import java.util.HashMap;
  * Created by aldur on 10/05/15.
  */
 public class UtilsTest {
+
+    private static final double DELTA = 10E-5;
 
     private void smallDensity() {
         HashMap<Writable, Writable> map = new HashMap<>();
@@ -60,7 +62,7 @@ public class UtilsTest {
         NeighbourhoodMap neighbourhoodMap = new NeighbourhoodMap();
         neighbourhoodMap.putAll(map);
 
-        Assert.assertEquals(Utils.density(neighbourhoodMap), 6.0 / 4.0);
+        Assert.assertEquals(Utils.density(neighbourhoodMap), 6.0 / 4.0, DELTA);
     }
 
     private void bigDensity() {
@@ -118,7 +120,7 @@ public class UtilsTest {
         NeighbourhoodMap neighbourhoodMap = new NeighbourhoodMap();
         neighbourhoodMap.putAll(map);
 
-        Assert.assertEquals(Utils.density(neighbourhoodMap), 2.0);
+        Assert.assertEquals(Utils.density(neighbourhoodMap), 2.0, DELTA);
     }
 
     @Test

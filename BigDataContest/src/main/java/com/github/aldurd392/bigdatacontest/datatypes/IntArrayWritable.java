@@ -1,16 +1,17 @@
 package com.github.aldurd392.bigdatacontest.datatypes;
 
+import com.sun.istack.NotNull;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
 public class IntArrayWritable extends ArrayWritable implements WritableComparable<IntArrayWritable> {
-	 
+
     public IntArrayWritable() {
         super(IntWritable.class);
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -24,7 +25,7 @@ public class IntArrayWritable extends ArrayWritable implements WritableComparabl
     }
 
     @Override
-    public int compareTo(IntArrayWritable o) {
+    public int compareTo(@NotNull IntArrayWritable o) {
         Writable[] our_writables = this.get();
         Writable[] other_writables = o.get();
 

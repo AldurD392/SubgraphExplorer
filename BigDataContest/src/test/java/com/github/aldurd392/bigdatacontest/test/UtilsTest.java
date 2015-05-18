@@ -128,4 +128,10 @@ public class UtilsTest {
         smallDensity();
         bigDensity();
     }
+
+    @Test
+    public void euristicFunctionTest() {
+        Assert.assertEquals(1, Utils.euristicFactorFunction(1), 10E-5);
+        Assert.assertEquals(0.265, Utils.euristicFactorFunction(50), 10E-2);
+    }
 }

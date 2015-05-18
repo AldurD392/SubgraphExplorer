@@ -17,21 +17,24 @@ import java.util.HashSet;
  * Created by aldur on 10/05/15.
  */
 public class Utils {
-	public static final String resultFileName = "_FOUND";
-	public static final String pathResultFile = "result";
-	
+    private static final String resultFileName = "_FOUND";
+    private static final String pathResultFile = "result";
+    private static final String successFileName = "_SUCCESS";
+
+    private static final double smoothing_factor = 5;
+
     public static double density(NeighbourhoodMap neighbourhood) {
         HashSet<Integer> nodes_set = new HashSet<>();
         for (Writable w : neighbourhood.keySet()) {
-            IntWritable i = (IntWritable)w;
+            IntWritable i = (IntWritable) w;
             nodes_set.add(i.get());
         }
 
         int i = 0;
-        for (Writable w: neighbourhood.values()) {
-            IntArrayWritable array_writable = (IntArrayWritable)w;
-            for (Writable w_node: array_writable.get()) {
-                IntWritable node = (IntWritable)w_node;
+        for (Writable w : neighbourhood.values()) {
+            IntArrayWritable array_writable = (IntArrayWritable) w;
+            for (Writable w_node : array_writable.get()) {
+                IntWritable node = (IntWritable) w_node;
                 if (nodes_set.contains(node.get())) {
                     i++;
                 }
@@ -58,11 +61,11 @@ public class Utils {
     }
 
     public static boolean resultFound() throws IOException {
-	    	Configuration conf = new Configuration();
-	    	FileSystem fs = FileSystem.get(conf);
-	    	Path resultFile = new Path(pathResultFile + "/" + resultFileName);
-	    	return fs.exists(resultFile);
-	}
+        Configuration conf = new Configuration();
+        FileSystem fs = FileSystem.get(conf);
+        Path resultFile = new Path(pathResultFile + "/" + resultFileName);
+        return fs.exists(resultFile);
+    }
 
     public static boolean previousResults(String currentOuputDirectory) throws IOException {
         Configuration conf = new Configuration();
@@ -78,8 +81,8 @@ public class Utils {
             return true;
         }
 
-        for (FileStatus status: statuses) {
-            if (status.getPath().getName().equals("_SUCCESS")) {
+        for (FileStatus status : statuses) {
+            if (status.getPath().getName().equals(successFileName)) {
                 continue;
             }
 
@@ -93,5 +96,9 @@ public class Utils {
         }
 
         return false;
+    }
+
+    public static double euristicFactorFunction(double rho) {
+        return Math.pow(rho, -(Math.log10(rho) / smoothing_factor));
     }
 }

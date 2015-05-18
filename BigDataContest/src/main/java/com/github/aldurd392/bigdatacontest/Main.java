@@ -37,19 +37,18 @@ import org.apache.hadoop.util.ToolRunner;
 
 public class Main extends Configured implements Tool {
 
-    private static Configuration mConfig;
+    public final static ArgsParser inputs = new ArgsParser();
 
     private final static String TEMPORARY_OUTPUT_DIRECTORY = "output";
     private final static String NEIGHBOURHOOD = "neighbourhood";
     private final static String SUBGRAPHER_NAME = "subgrapher";
-    public final static ArgsParser inputs = new ArgsParser(); 
+
+    private static Configuration mConfig;
 
     public static void main(String[] args) throws Exception {
-    	
-	    	new JCommander(inputs, args);
-	    	
-	    	int res = ToolRunner.run(new Configuration(), new Main(), args);
-	    System.exit(res);
+        new JCommander(inputs, args);
+        int res = ToolRunner.run(new Configuration(), new Main(), args);
+        System.exit(res);
     }
 
     private Job neighbourhoodJob(Configuration conf, String input) throws IOException {
@@ -116,7 +115,7 @@ public class Main extends Configured implements Tool {
         return TEMPORARY_OUTPUT_DIRECTORY + "_" + (++i);
     }
 
-    private Job iSubgraphJob(int i, Configuration conf) throws IOException {
+    private Job ithSubgraphJob(int i, Configuration conf) throws IOException {
         String input;
 
         if (i == 0) {
@@ -145,40 +144,37 @@ public class Main extends Configured implements Tool {
         boolean results = false;
         boolean condition;
 
-        do{
+        do {
             ArrayList<ControlledJob> dependencies = new ArrayList<>(1);
             dependencies.add(oldSubgraphJob);
-            Job newSubgraphJob = iSubgraphJob(++i, conf);
+            Job newSubgraphJob = ithSubgraphJob(++i, conf);
             ControlledJob newSubgraphControlledJob = new ControlledJob(newSubgraphJob, dependencies);
             controller.addJob(newSubgraphControlledJob);
-            
+
             Thread t = new Thread(controller);
             t.start();
 
             while (!controller.allFinished()) {
                 Thread.sleep(1000);
-            }            
-            
+            }
+
             oldSubgraphJob = newSubgraphControlledJob;
-            
-            if(inputs.iterMode() > 0){
-            		condition = (i < inputs.iterMode() - 1);
+
+            if (inputs.iterMode() > 0) {
+                condition = (i < inputs.iterMode() - 1);
+            } else {
+                condition = (!(results = Utils.resultFound()) && Utils.previousResults(getOuputFolder(i)));
             }
-            else {
-            		condition = (!(results = Utils.resultFound()) && Utils.previousResults(getOuputFolder(i)));
-            }
-            
+
         } while (condition);
 
-        if (inputs.iterMode() > 0){
-        		System.out.println("Iterations finished");
+        if (inputs.iterMode() > 0) {
+            System.out.println("Iterations finished");
+        } else if (results) {
+            System.out.println("We have found the result! :D");
+        } else {
+            System.out.println("Sorry, no results are possible. :(");
         }
-        else if(results) {
-        		System.out.println("We have found the result! :D");
-        	}
-	    else {
-	    		System.out.println("Sorry, no results are possible. :(");
-	    }
 
         return 0;
     }

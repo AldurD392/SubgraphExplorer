@@ -46,7 +46,17 @@ public class Main extends Configured implements Tool {
     private static Configuration mConfig;
 
     public static void main(String[] args) throws Exception {
-        new JCommander(inputs, args);
+        JCommander jCommander = new JCommander();
+        jCommander.setAcceptUnknownOptions(true);
+        jCommander.addObject(inputs);
+
+        try {
+            jCommander.parse(args);
+        } catch (ParameterException e) {
+            jCommander.usage();
+            System.exit(1);
+        }
+
         int res = ToolRunner.run(new Configuration(), new Main(), args);
         System.exit(res);
     }

@@ -4,7 +4,6 @@ package com.github.aldurd392.bigdatacontest.utils;
 import com.beust.jcommander.Parameter;
 
 import java.util.ArrayList;
-import java.lang.Math;
 import java.util.List;
 
 public class ArgsParser {

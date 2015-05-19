@@ -4,6 +4,7 @@ import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import com.github.aldurd392.bigdatacontest.Main;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -88,6 +89,13 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
             throws IOException, InterruptedException {
 
         final double p = Main.inputs.probMode();
+        final Configuration conf = context.getConfiguration();
+        final int round = conf.getInt("round", -1);
+
+        if (round == 0) {
+            IntWritable node = (IntWritable) key.get()[0];
+            context.write(node, value);
+        }
 
         for (IntWritable node : chooseNodes(value)) {
             if (p > 0 && random.nextDouble() > p) {

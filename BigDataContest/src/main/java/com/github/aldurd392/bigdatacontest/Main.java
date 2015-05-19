@@ -134,6 +134,8 @@ public class Main extends Configured implements Tool {
             input = getInputFolder(i);
         }
 
+        conf.setInt("round", i);
+
         String jobName = SUBGRAPHER_NAME + "_" + i;
         String output = getOuputFolder(i);
 

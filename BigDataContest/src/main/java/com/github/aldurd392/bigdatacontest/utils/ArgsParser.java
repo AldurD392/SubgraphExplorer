@@ -8,7 +8,7 @@ import java.util.List;
 
 public class ArgsParser {
 
-    @Parameter(description = "Input file path.", arity = 1)
+    @Parameter(names = "-input", description = "Input file path.", arity = 1, required = true)
     private List<String> files = new ArrayList<>();
 
     @Parameter(names = "-rho", description = "The fix rho value: double value.", arity = 1, required = true)

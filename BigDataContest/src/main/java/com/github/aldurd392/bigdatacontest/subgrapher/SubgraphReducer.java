@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 
 public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, IntArrayWritable, NeighbourhoodMap> {
@@ -91,19 +92,26 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, IntA
             }
             
         		int i=0;
-        		for (Writable w : map.values()) {
-        	           IntArrayWritable array_writable = (IntArrayWritable) w;
-        	           for (Writable w_node : array_writable.get()) {
-        	               IntWritable node = (IntWritable) w_node;
-        	               if (nodes_set.contains(node.get())) {
-        	                   i++;
-        	               }
-        	           }
-        	    }
+        		for (Entry<Writable, Writable> entry : map.entrySet()){
+        			IntWritable currKey = (IntWritable) entry.getKey();
+        			if(nodes_set.contains(currKey.get())){
+	        			IntArrayWritable array_writable = (IntArrayWritable) entry.getValue();
+	        			for (Writable w_node : array_writable.get()) {
+	        				IntWritable node = (IntWritable) w_node;
+	        				if (nodes_set.contains(node.get())) {
+	        	        			i++;
+	        				}
+	        			}
+        			}
+        		}
+        			
+        		// Normalize edges count.
+        		i = i/2;
         		
+        		System.out.println("Densita: "+ (double)i/result.get().length);
         		System.out.println("Nodi: "+ result);
         		System.out.println("#Nodi: "+ result.get().length);
-        		System.out.println("#Archi: "+ i/2);
+        		System.out.println("#Archi: "+ i);
 
             Utils.writeResultOnFile(result);
         }

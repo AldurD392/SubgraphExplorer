@@ -1,5 +1,6 @@
 package com.github.aldurd392.bigdatacontest.utils;
 
+import com.github.aldurd392.bigdatacontest.Main;
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 
@@ -11,6 +12,7 @@ import org.apache.hadoop.io.Writable;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Iterator;
 
 /**
  * BigDataContest - com.github.aldurd392.bigdatacontest.utils
@@ -23,25 +25,51 @@ public class Utils {
 
     private static final double smoothing_factor = 5;
 
-    public static double density(NeighbourhoodMap neighbourhood) {
-        HashSet<Integer> nodes_set = new HashSet<>();
-        for (Writable w : neighbourhood.keySet()) {
+    public static IntArrayWritable density(NeighbourhoodMap neighbourhood) {
+    		HashSet<IntWritable> nodes_set = new HashSet<>();
+    		for (Writable w : neighbourhood.keySet()) {
             IntWritable i = (IntWritable) w;
-            nodes_set.add(i.get());
+            nodes_set.add(i);
         }
+        
+        int num_nodes = nodes_set.size();
 
         int i = 0;
         for (Writable w : neighbourhood.values()) {
             IntArrayWritable array_writable = (IntArrayWritable) w;
             for (Writable w_node : array_writable.get()) {
                 IntWritable node = (IntWritable) w_node;
-                if (nodes_set.contains(node.get())) {
+                if (nodes_set.contains(node)) {
                     i++;
                 }
             }
         }
-
-        return (i / 2.0) / nodes_set.size();
+        
+        // Final edges count.
+        i = i/2;
+        
+        if(i/num_nodes >= Main.inputs.getRho()){
+            
+        		IntArrayWritable intArrayWritable = new IntArrayWritable();
+        		
+        		// Check if the subgraph founded is a clique.
+            if (i == ((num_nodes - 1)*num_nodes)/2){
+            		double diff = i/num_nodes - Main.inputs.getRho();
+            		System.out.println("Filtro di fattore:" +diff);
+            		
+            		Iterator<IntWritable> it = nodes_set.iterator();
+            		for(double j = 0; j < diff; j+=0.5){
+            			it.next();
+            			it.remove();
+            		}
+            }
+            
+       		IntWritable[] nodes_array = nodes_set.toArray(new IntWritable[nodes_set.size()]);
+         	intArrayWritable.set(nodes_array);
+        		return intArrayWritable;
+        }
+        	
+        return null;
     }
 
     public static void writeResultOnFile(IntArrayWritable result) throws IOException {

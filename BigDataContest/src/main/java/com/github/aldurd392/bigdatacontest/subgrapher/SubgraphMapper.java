@@ -87,6 +87,7 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
                     Context context)
             throws IOException, InterruptedException {
 
+//    		System.out.println("Mapper input "+ key + " " + value);
         final double p = Main.inputs.probMode();
 
         for (IntWritable node : chooseNodes(value)) {
@@ -95,7 +96,7 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
             }
 
             context.write(node, value);
-//            System.out.println("Mapper output: " + node + " - " + value);
+//            System.out.println("Mapper output: " + node + " " + value);
         }
     }
 }

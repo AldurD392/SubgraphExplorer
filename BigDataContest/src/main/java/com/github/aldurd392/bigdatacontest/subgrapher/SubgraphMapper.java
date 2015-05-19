@@ -95,6 +95,7 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
             }
 
             context.write(node, value);
+//            System.out.println("Mapper output: " + node + " - " + value);
         }
     }
 }

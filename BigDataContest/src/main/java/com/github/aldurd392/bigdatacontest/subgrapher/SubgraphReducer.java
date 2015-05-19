@@ -11,6 +11,8 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, IntArrayWritable, NeighbourhoodMap> {
 
@@ -19,14 +21,48 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, IntA
             throws IOException, InterruptedException {
 
         NeighbourhoodMap map = new NeighbourhoodMap();
+        ArrayList<NeighbourhoodMap> values_cache = new ArrayList<>();
+        HashMap<IntWritable, Integer> counter = new HashMap<>();
 
-        for (NeighbourhoodMap value : values) {
-            map.putAll(value);
+        for (NeighbourhoodMap neighbourhoodMap : values) {
+            NeighbourhoodMap _copy = new NeighbourhoodMap();
+            _copy.putAll(neighbourhoodMap);
+            values_cache.add(_copy);
+            map.putAll(neighbourhoodMap);
+
+            for (Writable k : neighbourhoodMap.keySet()) {
+                counter.put((IntWritable) k, 0);
+            }
         }
+//        System.out.println("Reducer input: " + values_cache);
 
         if (map.size() == 1) {
             return;
         }
+        if (values_cache.size() > 2) {
+            for (NeighbourhoodMap neighbourhoodMap : values_cache) {
+                for (Writable v : neighbourhoodMap.values()) {
+                    IntArrayWritable neighbours = (IntArrayWritable) v;
+
+                    for (Writable w : neighbours.get()) {
+                        IntWritable neighbour = (IntWritable) w;
+
+                        Integer count = counter.get(neighbour);
+                        if (count != null) {
+                            counter.put(neighbour, count + 1);
+                        }
+                    }
+                }
+            }
+
+            for (Map.Entry<IntWritable, Integer> entry : counter.entrySet()) {
+                if (entry.getValue() < Main.inputs.getEuristicFactor() * (counter.size() - 1)) {
+                    map.remove(entry.getKey());
+                }
+            }
+        }
+//        System.out.println("Reducer counter: " + counter);
+//        System.out.println("Reducer after filtering: " + map);
 
         IntArrayWritable intArrayWritable = new IntArrayWritable();
         ArrayList<IntWritable> list = new ArrayList<>();
@@ -41,5 +77,6 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, IntA
         }
 
         context.write(intArrayWritable, map);
+//        System.out.println("Reducer output: " + intArrayWritable + " - " + map);
     }
 }

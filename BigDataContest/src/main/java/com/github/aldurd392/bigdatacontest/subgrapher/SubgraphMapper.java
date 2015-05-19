@@ -53,7 +53,7 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
         TreeMap<Integer, HashSet<IntWritable>> nodes = new TreeMap<>(Collections.reverseOrder());
         for (Map.Entry<IntWritable, Integer> entry : counter.entrySet()) {
 
-            if (entry.getValue() > Main.inputs.getEuristicFactor() * length) {
+            if (entry.getValue() >= Main.inputs.getEuristicFactor() * length) {
                 if (nodes.containsKey(entry.getValue())) {
                     nodes.get(entry.getValue()).add(entry.getKey());
                 } else {

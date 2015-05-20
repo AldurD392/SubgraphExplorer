@@ -1,11 +1,12 @@
 package com.github.aldurd392.bigdatacontest.utils;
 
-import com.github.aldurd392.bigdatacontest.Main;
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
-
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.*;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
@@ -28,10 +29,11 @@ public class Utils {
     /**
      * Given the neighbourhood map, calculate the density of the subgraph.
      * @param neighbourhood our subgraph representation
+     * @param rho the required density value
      * @return null if the supplied subgraph didn't meet density requirements,
      * otherwise the densest subgraph found that still meets the requirements.
      */
-    public static IntArrayWritable density(NeighbourhoodMap neighbourhood) {
+    public static IntArrayWritable density(NeighbourhoodMap neighbourhood, double rho) {
         final int neighbourhood_size = neighbourhood.size();
 
         final HashSet<IntWritable> neighbourhood_nodes = new HashSet<>(neighbourhood_size);
@@ -44,7 +46,7 @@ public class Utils {
          * We have the number of nodes in the subgraph.
          * Let's count the number of edges too.
          */
-        int edges_count = 0;
+        double edges_count = 0;
         for (Writable writable_neighbours : neighbourhood.values()) {
             IntArrayWritable neighbours = (IntArrayWritable) writable_neighbours;
 
@@ -57,9 +59,8 @@ public class Utils {
             }
         }
         // We counted each edge twice, so better divide by two here.
-        edges_count = edges_count / 2;
+        edges_count = edges_count / 2.0;
 
-        final double rho = Main.inputs.getRho();
         if (edges_count / neighbourhood_size >= rho) {
             /*
              * Once we know that the subgraph we're dealing with meets our density requirements,
@@ -67,8 +68,7 @@ public class Utils {
              * In that case we can shrink its size until it's minimal (our goal).
              */
             if (edges_count == ((neighbourhood_size - 1) * neighbourhood_size) / 2) {
-                double diff = ((double) edges_count / neighbourhood_size) - rho;
-                System.out.println("Filtro di fattore: " + diff);
+                double diff = edges_count / neighbourhood_size - rho;
 
                 Iterator<IntWritable> neighbourhood_nodes_iterator = neighbourhood_nodes.iterator();
                 for (; diff >= 0.5; diff -= 0.5) {

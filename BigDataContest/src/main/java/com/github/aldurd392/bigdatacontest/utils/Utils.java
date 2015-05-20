@@ -68,10 +68,8 @@ public class Utils {
              * In that case we can shrink its size until it's minimal (our goal).
              */
             if (edges_count == ((neighbourhood_size - 1) * neighbourhood_size) / 2) {
-                double diff = edges_count / neighbourhood_size - rho;
-
                 Iterator<IntWritable> neighbourhood_nodes_iterator = neighbourhood_nodes.iterator();
-                for (; diff >= 0.5; diff -= 0.5) {
+                for (double diff = edges_count / neighbourhood_size - rho; diff >= 0.5; diff -= 0.5) {
                     neighbourhood_nodes_iterator.next();
                     neighbourhood_nodes_iterator.remove();
                 }

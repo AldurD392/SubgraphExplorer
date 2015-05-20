@@ -5,20 +5,16 @@ import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.IntegerValueComparator;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import com.github.aldurd392.bigdatacontest.utils.Utils;
-
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
-public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, IntArrayWritable, NeighbourhoodMap> {
+public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, NullWritable, NeighbourhoodMap> {
 
     @Override
     protected void reduce(IntWritable key, Iterable<NeighbourhoodMap> values, Context context)
@@ -71,15 +67,6 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, IntA
             }
         }
 
-        IntArrayWritable intArrayWritable = new IntArrayWritable();
-        ArrayList<IntWritable> list = new ArrayList<>();
-        for (Writable w : map.keySet()) {
-            list.add((IntWritable) w);
-        }
-
-        IntWritable[] intWritables = list.toArray(new IntWritable[list.size()]);
-        intArrayWritable.set(intWritables);
-
         IntArrayWritable result = Utils.density(map, Main.inputs.getRho());
         if (result != null) {
 
@@ -116,6 +103,6 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, IntA
             Utils.writeResultOnFile(result);
         }
 
-        context.write(intArrayWritable, map);
+        context.write(NullWritable.get(), map);
     }
 }

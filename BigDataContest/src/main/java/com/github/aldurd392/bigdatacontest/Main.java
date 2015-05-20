@@ -5,24 +5,22 @@
  */
 package com.github.aldurd392.bigdatacontest;
 
-import java.io.IOException;
-import java.util.ArrayList;
-
-import com.beust.jcommander.*;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import com.github.aldurd392.bigdatacontest.neighbourhood.NeighbourMapper;
+import com.github.aldurd392.bigdatacontest.neighbourhood.NeighbourReducer;
 import com.github.aldurd392.bigdatacontest.reader.ReaderMapper;
 import com.github.aldurd392.bigdatacontest.subgrapher.SubgraphMapper;
 import com.github.aldurd392.bigdatacontest.subgrapher.SubgraphReducer;
 import com.github.aldurd392.bigdatacontest.utils.ArgsParser;
 import com.github.aldurd392.bigdatacontest.utils.Utils;
-import com.github.aldurd392.bigdatacontest.neighbourhood.NeighbourReducer;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
@@ -34,6 +32,9 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+
+import java.io.IOException;
+import java.util.ArrayList;
 
 public class Main extends Configured implements Tool {
 
@@ -78,7 +79,7 @@ public class Main extends Configured implements Tool {
 
         neighbourhoodJob.setMapOutputKeyClass(IntWritable.class);
         neighbourhoodJob.setMapOutputValueClass(IntWritable.class);
-        neighbourhoodJob.setOutputKeyClass(IntArrayWritable.class);
+        neighbourhoodJob.setOutputKeyClass(NullWritable.class);
         neighbourhoodJob.setOutputValueClass(NeighbourhoodMap.class);
 
         return neighbourhoodJob;
@@ -98,7 +99,7 @@ public class Main extends Configured implements Tool {
 
         subgraphJob.setMapOutputKeyClass(IntWritable.class);
         subgraphJob.setMapOutputValueClass(NeighbourhoodMap.class);
-        subgraphJob.setOutputKeyClass(IntArrayWritable.class);
+        subgraphJob.setOutputKeyClass(NullWritable.class);
         subgraphJob.setOutputValueClass(NeighbourhoodMap.class);
 
         MultipleInputs.addInputPath(

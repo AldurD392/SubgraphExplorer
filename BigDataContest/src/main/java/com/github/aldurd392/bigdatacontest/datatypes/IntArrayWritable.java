@@ -17,11 +17,11 @@ public class IntArrayWritable extends ArrayWritable implements WritableComparabl
         StringBuilder sb = new StringBuilder();
 
         for (String s : super.toStrings()) {
-            sb.append(s).append(" ");
+            sb.append(s).append(", ");
         }
 
         String fromSb = sb.toString();
-        return "[" + fromSb.substring(0, fromSb.length() - 1) + "]";
+        return "[" + fromSb.substring(0, fromSb.length() - 2) + "]";
     }
 
     @Override

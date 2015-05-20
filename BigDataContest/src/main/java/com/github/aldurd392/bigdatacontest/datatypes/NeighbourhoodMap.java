@@ -10,9 +10,9 @@ public class NeighbourhoodMap extends MapWritable {
         StringBuilder sb = new StringBuilder();
 
         for (Entry<Writable, Writable> entry : this.entrySet()) {
-            sb.append(entry.getKey()).append(":").append(entry.getValue());
+            sb.append(entry.getKey()).append(":").append(entry.getValue()).append(", ");
         }
 
-        return "{" + sb.toString() + "}";
+        return "{" + sb.toString().substring(0, sb.length() - 2) + "}";
     }
 }

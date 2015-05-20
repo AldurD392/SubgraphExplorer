@@ -1,13 +1,13 @@
 package com.github.aldurd392.bigdatacontest.datatypes;
 
+import org.apache.hadoop.io.IntWritable;
+
 import java.util.Comparator;
 import java.util.Map;
 
-import org.apache.hadoop.io.IntWritable;
-
 public class IntegerValueComparator implements Comparator<IntWritable> {
 
-    Map<IntWritable, Integer> base;
+    private final Map<IntWritable, Integer> base;
 
     public IntegerValueComparator(Map<IntWritable, Integer> base) {
         this.base = base;

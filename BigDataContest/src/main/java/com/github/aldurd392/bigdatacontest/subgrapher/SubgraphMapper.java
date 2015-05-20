@@ -6,13 +6,14 @@ import com.github.aldurd392.bigdatacontest.Main;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
 import java.util.*;
 
-public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, IntWritable, NeighbourhoodMap> {
+public class SubgraphMapper extends Mapper<NullWritable, NeighbourhoodMap, IntWritable, NeighbourhoodMap> {
 
     private final static Random random = new Random();
 
@@ -104,7 +105,7 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
 
 
     @Override
-    public void map(IntArrayWritable key, NeighbourhoodMap value,
+    public void map(NullWritable key, NeighbourhoodMap value,
                     Context context)
             throws IOException, InterruptedException {
 
@@ -116,7 +117,7 @@ public class SubgraphMapper extends Mapper<IntArrayWritable, NeighbourhoodMap, I
             /* On first round, we emit ourselves too.
             * We need to do this because Hadoop takes the liberty
             * to ignore our ReaderMapper on first round. */
-            IntWritable node = (IntWritable) key.get()[0];
+            IntWritable node = (IntWritable) value.keySet().iterator().next();
             context.write(node, value);
         }
 

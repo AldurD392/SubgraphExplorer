@@ -55,10 +55,10 @@ public class Utils {
         		// Check if the subgraph founded is a clique.
             if (i == ((num_nodes - 1)*num_nodes)/2){
             		double diff = i/num_nodes - Main.inputs.getRho();
-            		System.out.println("Filtro di fattore:" +diff);
+            		System.out.println("Filtro di fattore: " +diff);
             		
             		Iterator<IntWritable> it = nodes_set.iterator();
-            		for(double j = 0; j < diff; j+=0.5){
+            		for(; diff >= 0.5; diff-=0.5){
             			it.next();
             			it.remove();
             		}

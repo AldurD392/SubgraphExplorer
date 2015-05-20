@@ -25,50 +25,66 @@ public class Utils {
 
     private static final double smoothing_factor = 5;
 
+    /**
+     * Given the neighbourhood map, calculate the density of the subgraph.
+     * @param neighbourhood our subgraph representation
+     * @return null if the supplied subgraph didn't meet density requirements,
+     * otherwise the densest subgraph found that still meets the requirements.
+     */
     public static IntArrayWritable density(NeighbourhoodMap neighbourhood) {
-    		HashSet<IntWritable> nodes_set = new HashSet<>();
-    		for (Writable w : neighbourhood.keySet()) {
-            IntWritable i = (IntWritable) w;
-            nodes_set.add(i);
-        }
-        
-        int num_nodes = nodes_set.size();
+        final int neighbourhood_size = neighbourhood.size();
 
-        int i = 0;
-        for (Writable w : neighbourhood.values()) {
-            IntArrayWritable array_writable = (IntArrayWritable) w;
-            for (Writable w_node : array_writable.get()) {
-                IntWritable node = (IntWritable) w_node;
-                if (nodes_set.contains(node)) {
-                    i++;
+        final HashSet<IntWritable> neighbourhood_nodes = new HashSet<>(neighbourhood_size);
+        for (Writable writable_node: neighbourhood.keySet()) {
+            IntWritable node = (IntWritable) writable_node;
+            neighbourhood_nodes.add(node);
+        }
+
+        /*
+         * We have the number of nodes in the subgraph.
+         * Let's count the number of edges too.
+         */
+        int edges_count = 0;
+        for (Writable writable_neighbours : neighbourhood.values()) {
+            IntArrayWritable neighbours = (IntArrayWritable) writable_neighbours;
+
+            for (Writable writable_neighbour : neighbours.get()) {
+                IntWritable neighbour = (IntWritable) writable_neighbour;
+
+                if (neighbourhood_nodes.contains(neighbour)) {
+                    edges_count++;
                 }
             }
         }
-        
-        // Final edges count.
-        i = i/2;
-        
-        if(i/num_nodes >= Main.inputs.getRho()){
-            
-        		IntArrayWritable intArrayWritable = new IntArrayWritable();
-        		
-        		// Check if the subgraph founded is a clique.
-            if (i == ((num_nodes - 1)*num_nodes)/2){
-            		double diff = i/num_nodes - Main.inputs.getRho();
-            		System.out.println("Filtro di fattore: " +diff);
-            		
-            		Iterator<IntWritable> it = nodes_set.iterator();
-            		for(; diff >= 0.5; diff-=0.5){
-            			it.next();
-            			it.remove();
-            		}
+        // We counted each edge twice, so better divide by two here.
+        edges_count = edges_count / 2;
+
+        final double rho = Main.inputs.getRho();
+        if (edges_count / neighbourhood_size >= rho) {
+            /*
+             * Once we know that the subgraph we're dealing with meets our density requirements,
+             * we check if it's a clique (by comparing the number of edges and the number of nodes).
+             * In that case we can shrink its size until it's minimal (our goal).
+             */
+            if (edges_count == ((neighbourhood_size - 1) * neighbourhood_size) / 2) {
+                double diff = ((double) edges_count / neighbourhood_size) - rho;
+                System.out.println("Filtro di fattore: " + diff);
+
+                Iterator<IntWritable> neighbourhood_nodes_iterator = neighbourhood_nodes.iterator();
+                for (; diff >= 0.5; diff -= 0.5) {
+                    neighbourhood_nodes_iterator.next();
+                    neighbourhood_nodes_iterator.remove();
+                }
             }
-            
-       		IntWritable[] nodes_array = nodes_set.toArray(new IntWritable[nodes_set.size()]);
-         	intArrayWritable.set(nodes_array);
-        		return intArrayWritable;
+
+            IntWritable[] nodes_array = neighbourhood_nodes.toArray(new IntWritable[neighbourhood_nodes.size()]);
+            final IntArrayWritable densestSubgraph = new IntArrayWritable();
+            densestSubgraph.set(nodes_array);
+
+            return densestSubgraph;
         }
-        	
+
+        /* If the subgraph didn't meet required density value, we return null. */
         return null;
     }
 
@@ -126,6 +142,11 @@ public class Utils {
         return false;
     }
 
+    /**
+     * This function selects a proper euristicFactor given the desired rho
+     * @param rho the desired density.
+     * @return an euristic factor that is inversely proportional to rho.
+     */
     public static double euristicFactorFunction(double rho) {
         return Math.pow(rho, -(Math.log10(rho) / smoothing_factor));
     }

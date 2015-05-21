@@ -2,7 +2,6 @@ package com.github.aldurd392.bigdatacontest.subgrapher;
 
 import com.github.aldurd392.bigdatacontest.Main;
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
-import com.github.aldurd392.bigdatacontest.datatypes.IntegerValueComparator;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import com.github.aldurd392.bigdatacontest.utils.Utils;
 import org.apache.hadoop.io.IntWritable;
@@ -11,65 +10,109 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.PriorityQueue;
 
 public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, NullWritable, NeighbourhoodMap> {
+
+    private final static double euristicFactor = Main.inputs.getEuristicFactor();
 
     @Override
     protected void reduce(IntWritable key, Iterable<NeighbourhoodMap> values, Context context)
             throws IOException, InterruptedException {
-
-        NeighbourhoodMap map = new NeighbourhoodMap();
-        ArrayList<NeighbourhoodMap> values_cache = new ArrayList<>();
-        HashMap<IntWritable, Integer> counter = new HashMap<>();
+        final NeighbourhoodMap subgraphMap = new NeighbourhoodMap();
+        int mapIterableCounter = 0;
 
         for (NeighbourhoodMap neighbourhoodMap : values) {
-            NeighbourhoodMap _copy = new NeighbourhoodMap();
-            _copy.putAll(neighbourhoodMap);
-            values_cache.add(_copy);
-            map.putAll(neighbourhoodMap);
-
-            for (Writable k : neighbourhoodMap.keySet()) {
-                counter.put((IntWritable) k, 0);
-            }
+            subgraphMap.putAll(neighbourhoodMap);
+            mapIterableCounter++;
         }
 
-        if (map.size() == 1) {
+        if (subgraphMap.size() == 1) {
+            /*
+            We ignore data coming from ReaderMapper
+            that no one asked and wouldn't be used.
+             */
             return;
         }
 
-        if (values_cache.size() > 2) {
-            for (NeighbourhoodMap neighbourhoodMap : values_cache) {
-                for (Writable v : neighbourhoodMap.values()) {
-                    IntArrayWritable neighbours = (IntArrayWritable) v;
+        /* We are preparing to filter nodes in map.
+        If the original values itarable contained only two elements,
+        there is no need for filtering, because we're dealing with
+        our previous subgraph and the ouput from readermapper.
+         */
+        if (mapIterableCounter > 2) {
+            /*
+            With this map we'll count all the occurrences of the
+            key nodes (and only of them) in our map among the neighbourhoods.
+            */
+            final HashMap<IntWritable, Integer> counter = new HashMap<>();
+            for (Writable k : subgraphMap.keySet()) {
+                counter.put((IntWritable) k, 0);
+            }
+//            System.out.println("Reducer input: " + key + " " + subgraphMap);
 
-                    for (Writable w : neighbours.get()) {
-                        IntWritable neighbour = (IntWritable) w;
+            for (Writable writable_neighbours : subgraphMap.values()) {
+                IntArrayWritable neighbours = (IntArrayWritable) writable_neighbours;
 
-                        Integer count = counter.get(neighbour);
-                        if (count != null) {
-                            counter.put(neighbour, count + 1);
-                        }
+                for (Writable writable_neighbour : neighbours.get()) {
+                    IntWritable neighbour = (IntWritable) writable_neighbour;
+
+                    Integer count = counter.get(neighbour);
+                    if (count != null) {
+                        counter.put(neighbour, count + 1);
                     }
                 }
             }
 
-            IntegerValueComparator ivc = new IntegerValueComparator(counter);
-            TreeMap<IntWritable, Integer> orderedMap = new TreeMap<>(ivc);
-            orderedMap.putAll(counter);
+            final HashMap<IntWritable, Entry<IntWritable, Integer>> referencesMap = new HashMap<>(counter.size());
+            final PriorityQueue<Entry<IntWritable, Integer>> minHeap = new PriorityQueue<>(
+                    new Comparator<Entry<IntWritable, Integer>>() {
+                @Override
+                public int compare(Entry<IntWritable, Integer> o1, Entry<IntWritable, Integer> o2) {
+                    return o1.getValue().compareTo(o2.getValue());
+                }
+            });
 
-            //TODO Certi nodi non cancellati perche? cosi dovrebbero rimanere solo le clique no?
-            for (Map.Entry<IntWritable, Integer> entry : orderedMap.entrySet()) {
-                if (entry.getValue() < (1.0 * (map.size() - 1))) {
-                    map.remove(entry.getKey());
+            for (Entry<IntWritable, Integer> entry : counter.entrySet()) {
+                minHeap.add(entry);
+                referencesMap.put(entry.getKey(), entry);
+            }
+
+//            System.out.println(subgraphMap);
+            Entry<IntWritable, Integer> minHeapEntry;
+            while ((minHeapEntry = minHeap.poll()) != null) {
+
+                if (minHeapEntry.getValue() < (euristicFactor * (subgraphMap.size() - 1))) {
+                    IntWritable minHeapEntryKey = minHeapEntry.getKey();
+//                    System.out.println(minHeapEntry.getKey() + " : " + minHeapEntry.getValue());
+                    IntArrayWritable neighbours = (IntArrayWritable) subgraphMap.remove(minHeapEntryKey);
+                    referencesMap.remove(minHeapEntryKey);
+
+                    /* Update every other counter that depended on the key of the entry. */
+                    for (Writable writable_neighbour : neighbours.get()) {
+                        IntWritable neighbour = (IntWritable) writable_neighbour;
+
+                        Entry<IntWritable, Integer> referenceEntry = referencesMap.get(neighbour);
+                        if (referenceEntry != null) {
+                            minHeap.remove(referenceEntry);
+                            referenceEntry.setValue(referenceEntry.getValue() - 1);
+                            minHeap.add(referenceEntry);
+                        }
+                    }
+                } else {
+                    break;
                 }
             }
+
+//            System.out.println("Reducer after filtering: " + subgraphMap);
         }
 
-        IntArrayWritable result = Utils.density(map, Main.inputs.getRho());
+        IntArrayWritable result = Utils.density(subgraphMap, Main.inputs.getRho());
         if (result != null) {
-
             // Edges count.
             HashSet<Integer> nodes_set = new HashSet<>();
 
@@ -79,7 +122,7 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, Null
             }
 
             int i = 0;
-            for (Entry<Writable, Writable> entry : map.entrySet()) {
+            for (Entry<Writable, Writable> entry : subgraphMap.entrySet()) {
                 IntWritable currKey = (IntWritable) entry.getKey();
                 if (nodes_set.contains(currKey.get())) {
                     IntArrayWritable array_writable = (IntArrayWritable) entry.getValue();
@@ -103,6 +146,6 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, Null
             Utils.writeResultOnFile(result);
         }
 
-        context.write(NullWritable.get(), map);
+        context.write(NullWritable.get(), subgraphMap);
     }
 }

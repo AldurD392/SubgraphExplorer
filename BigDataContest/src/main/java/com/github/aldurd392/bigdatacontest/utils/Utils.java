@@ -8,6 +8,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 
@@ -113,8 +114,6 @@ public class Utils {
         Configuration conf = new Configuration();
         FileSystem fs = FileSystem.get(conf);
 
-        Writable w = new IntArrayWritable();
-
         FileStatus[] statuses;
         try {
             statuses = fs.listStatus(new Path(currentOuputDirectory));
@@ -129,7 +128,7 @@ public class Utils {
             }
 
             SequenceFile.Reader reader = new SequenceFile.Reader(fs, status.getPath(), conf);
-            if (reader.next(w)) {
+            if (reader.next(NullWritable.get())) {
                 reader.close();
                 return true;
             }

@@ -24,14 +24,19 @@ public class NeighbourReducer extends Reducer<IntWritable,IntWritable,NullWritab
             IntWritable i = new IntWritable(aValue.get());
             neighbours_list.add(i);
         }
-
-        IntArrayWritable neighbours = new IntArrayWritable();
-        neighbours.set(neighbours_list.toArray(new IntWritable[neighbours_list.size()]));
-        neighbours_map.put(key, neighbours);
-
-        context.write(NullWritable.get(), neighbours_map);
-
+        
+        // Filter nodes with degree == 1
+        if(neighbours_list.size() > 1){
+	        IntArrayWritable neighbours = new IntArrayWritable();
+	        neighbours.set(neighbours_list.toArray(new IntWritable[neighbours_list.size()]));
+	        neighbours_map.put(key, neighbours);
+	        
+	        
+	        context.write(NullWritable.get(), neighbours_map);
+        }
+        
         neighbours_list.clear();
         neighbours_map.clear();
+        
     }
 }

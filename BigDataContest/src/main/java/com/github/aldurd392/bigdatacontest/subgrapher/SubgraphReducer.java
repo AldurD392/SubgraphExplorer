@@ -31,10 +31,12 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, Null
             mapIterableCounter++;
         }
 
-        if (subgraphMap.size() == 1) {
+        // TODO check if we can omit mapIrableCounter ==1 (used to filter nodes with degree 1)
+        if (subgraphMap.size() == 1 || mapIterableCounter == 1) {
             /*
             We ignore data coming from ReaderMapper
             that no one asked and wouldn't be used.
+            We ignore also who asked for a node with degree 1.
              */
             return;
         }
@@ -69,9 +71,8 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, Null
             }
 
             final HashMap<IntWritable, Entry<IntWritable, Integer>> referencesMap = new HashMap<>(counter.size());
-            final PriorityQueue<Entry<IntWritable, Integer>> minHeap = new PriorityQueue<>(
-                    new Comparator<Entry<IntWritable, Integer>>() {
-                @Override
+            final PriorityQueue<Entry<IntWritable, Integer>> minHeap = new PriorityQueue<Entry<IntWritable, Integer>>(mapIterableCounter, new Comparator<Entry<IntWritable, Integer>>() {
+                @Override 
                 public int compare(Entry<IntWritable, Integer> o1, Entry<IntWritable, Integer> o2) {
                     return o1.getValue().compareTo(o2.getValue());
                 }
@@ -113,35 +114,35 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, Null
 
         IntArrayWritable result = Utils.density(subgraphMap, Main.inputs.getRho());
         if (result != null) {
-            // Edges count.
-            HashSet<Integer> nodes_set = new HashSet<>();
-
-            for (Writable w : result.get()) {
-                IntWritable i = (IntWritable) w;
-                nodes_set.add(i.get());
-            }
-
-            int i = 0;
-            for (Entry<Writable, Writable> entry : subgraphMap.entrySet()) {
-                IntWritable currKey = (IntWritable) entry.getKey();
-                if (nodes_set.contains(currKey.get())) {
-                    IntArrayWritable array_writable = (IntArrayWritable) entry.getValue();
-                    for (Writable w_node : array_writable.get()) {
-                        IntWritable node = (IntWritable) w_node;
-                        if (nodes_set.contains(node.get())) {
-                            i++;
-                        }
-                    }
-                }
-            }
-
-            // Normalize edges count.
-            i = i / 2;
-
-            System.out.println("Densita: " + (double) i / result.get().length);
-            System.out.println("Nodi: " + result);
-            System.out.println("#Nodi: " + result.get().length);
-            System.out.println("#Archi: " + i);
+//            // Edges count.
+//            HashSet<Integer> nodes_set = new HashSet<>();
+//
+//            for (Writable w : result.get()) {
+//                IntWritable i = (IntWritable) w;
+//                nodes_set.add(i.get());
+//            }
+//
+//            int i = 0;
+//            for (Entry<Writable, Writable> entry : subgraphMap.entrySet()) {
+//                IntWritable currKey = (IntWritable) entry.getKey();
+//                if (nodes_set.contains(currKey.get())) {
+//                    IntArrayWritable array_writable = (IntArrayWritable) entry.getValue();
+//                    for (Writable w_node : array_writable.get()) {
+//                        IntWritable node = (IntWritable) w_node;
+//                        if (nodes_set.contains(node.get())) {
+//                            i++;
+//                        }
+//                    }
+//                }
+//            }
+//
+//            // Normalize edges count.
+//            i = i / 2;
+//
+//            System.out.println("Densita: " + (double) i / result.get().length);
+//            System.out.println("Nodi: " + result);
+//            System.out.println("#Nodi: " + result.get().length);
+//            System.out.println("#Archi: " + i);
 
             Utils.writeResultOnFile(result);
         }

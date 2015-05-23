@@ -9,6 +9,7 @@ def main(separator='\t'):
     data = read_input(sys.stdin)
     for u, v in data:
         print("{}\t{}".format(u, v))
+        print("{}\t{}".format(v, u))
 
 
 if __name__ == '__main__':

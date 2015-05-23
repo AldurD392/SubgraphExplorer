@@ -30,12 +30,11 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, Null
             mapIterableCounter++;
         }
 
-        // TODO check if we can omit mapIrableCounter ==1 (used to filter nodes with degree 1)
         if (subgraphMap.size() == 1 || mapIterableCounter == 1) {
             /*
             We ignore data coming from ReaderMapper
             that no one asked and wouldn't be used.
-            We ignore also who asked for a node with degree 1.
+            We also ignore those who asked for a node with degree 1.
              */
             return;
         }

@@ -6,7 +6,7 @@ import sys
 import math
 import os
 
-candidate = {int(i) for i in sys.argv[2].strip("[]").split()}
+candidate = set(eval(sys.argv[2]))
 
 i = 0
 with open(sys.argv[1]) as f:

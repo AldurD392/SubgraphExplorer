@@ -12,7 +12,6 @@ import org.apache.hadoop.mapreduce.Reducer;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
 
@@ -42,9 +41,9 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, Null
         }
 
         /* We are preparing to filter nodes in map.
-        If the original values itarable contained only two elements,
+        If the original values iterable contained only two elements,
         there is no need for filtering, because we're dealing with
-        our previous subgraph and the ouput from readermapper.
+        our previous subgraph and the output from ReaderMapper.
          */
         if (mapIterableCounter > 2) {
             /*
@@ -55,7 +54,6 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, Null
             for (Writable k : subgraphMap.keySet()) {
                 counter.put((IntWritable) k, 0);
             }
-//            System.out.println("Reducer input: " + key + " " + subgraphMap);
 
             for (Writable writable_neighbours : subgraphMap.values()) {
                 IntArrayWritable neighbours = (IntArrayWritable) writable_neighbours;
@@ -70,8 +68,14 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, Null
                 }
             }
 
+            /*
+            The referencesMap and the minHeap will be useful for our filtering process.
+            We'll use the minHeap to iterate through the nodes by minimum counts.
+            We'll use the referencesMap to update the counts of the other nodes after filtering.
+             */
             final HashMap<IntWritable, Entry<IntWritable, Integer>> referencesMap = new HashMap<>(counter.size());
-            final PriorityQueue<Entry<IntWritable, Integer>> minHeap = new PriorityQueue<Entry<IntWritable, Integer>>(mapIterableCounter, new Comparator<Entry<IntWritable, Integer>>() {
+            final PriorityQueue<Entry<IntWritable, Integer>> minHeap = new PriorityQueue<>(subgraphMap.size(),
+                    new Comparator<Entry<IntWritable, Integer>>() {
                 @Override 
                 public int compare(Entry<IntWritable, Integer> o1, Entry<IntWritable, Integer> o2) {
                     return o1.getValue().compareTo(o2.getValue());
@@ -83,13 +87,16 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, Null
                 referencesMap.put(entry.getKey(), entry);
             }
 
-//            System.out.println(subgraphMap);
             Entry<IntWritable, Integer> minHeapEntry;
             while ((minHeapEntry = minHeap.poll()) != null) {
 
+                /*
+                This is the filtering step:
+                we remove form the subgraph all those nodes that are not promising,
+                and that have been added because of an erroneous merge.
+                 */
                 if (minHeapEntry.getValue() < (euristicFactor * (subgraphMap.size() - 1))) {
                     IntWritable minHeapEntryKey = minHeapEntry.getKey();
-//                    System.out.println(minHeapEntry.getKey() + " : " + minHeapEntry.getValue());
                     IntArrayWritable neighbours = (IntArrayWritable) subgraphMap.remove(minHeapEntryKey);
                     referencesMap.remove(minHeapEntryKey);
 
@@ -105,45 +112,14 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, Null
                         }
                     }
                 } else {
+                    /* When we stop removing nodes, we know that we can move on to the next step. */
                     break;
                 }
             }
-
-//            System.out.println("Reducer after filtering: " + subgraphMap);
         }
 
         IntArrayWritable result = Utils.density(subgraphMap, Main.inputs.getRho());
         if (result != null) {
-//            // Edges count.
-//            HashSet<Integer> nodes_set = new HashSet<>();
-//
-//            for (Writable w : result.get()) {
-//                IntWritable i = (IntWritable) w;
-//                nodes_set.add(i.get());
-//            }
-//
-//            int i = 0;
-//            for (Entry<Writable, Writable> entry : subgraphMap.entrySet()) {
-//                IntWritable currKey = (IntWritable) entry.getKey();
-//                if (nodes_set.contains(currKey.get())) {
-//                    IntArrayWritable array_writable = (IntArrayWritable) entry.getValue();
-//                    for (Writable w_node : array_writable.get()) {
-//                        IntWritable node = (IntWritable) w_node;
-//                        if (nodes_set.contains(node.get())) {
-//                            i++;
-//                        }
-//                    }
-//                }
-//            }
-//
-//            // Normalize edges count.
-//            i = i / 2;
-//
-//            System.out.println("Densita: " + (double) i / result.get().length);
-//            System.out.println("Nodi: " + result);
-//            System.out.println("#Nodi: " + result.get().length);
-//            System.out.println("#Archi: " + i);
-
             Utils.writeResultOnFile(result);
         }
 

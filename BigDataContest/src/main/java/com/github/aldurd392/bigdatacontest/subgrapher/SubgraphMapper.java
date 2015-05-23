@@ -4,6 +4,7 @@ import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import com.github.aldurd392.bigdatacontest.Main;
 
+import com.github.aldurd392.bigdatacontest.utils.Utils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
@@ -15,17 +16,12 @@ import java.util.*;
 
 public class SubgraphMapper extends Mapper<NullWritable, NeighbourhoodMap, IntWritable, NeighbourhoodMap> {
 
-    private final static Random random = new Random();
-
     /*
      * Here we return a list containing the most promising neighbours.
      * Those neighbours will be then emitted and on next round will be part
      * of our new subgraph.
-     *
-     * Note that if probability mode is enabled, then we'll emit those
-     * neighbours only by honouring the given probability.
      */
-    private static Set<IntWritable> chooseNodes(NeighbourhoodMap neighbourhoodMap) {
+    private static Set<IntWritable> chooseNodes(NeighbourhoodMap neighbourhoodMap, double euristicFactor) {
 
         /* We'll count here the occurrences of each neighbour in the map */
         final HashMap<Integer, Integer> counter = new HashMap<>();
@@ -69,7 +65,7 @@ public class SubgraphMapper extends Mapper<NullWritable, NeighbourhoodMap, IntWr
         final int length = neighbourhoodMap.size();
         for (Map.Entry<Integer, Integer> entry : counter.entrySet()) {
 
-            if (entry.getValue() >= Main.inputs.getEuristicFactor() * length) {
+            if (entry.getValue() >= euristicFactor * length) {
                 HashSet<Integer> countedNodes = nodes_by_count.get(entry.getValue());
 
                 if (countedNodes == null) {
@@ -109,7 +105,6 @@ public class SubgraphMapper extends Mapper<NullWritable, NeighbourhoodMap, IntWr
                     Context context)
             throws IOException, InterruptedException {
 
-        final double p = Main.inputs.probMode();
         final Configuration conf = context.getConfiguration();
         final int round = conf.getInt("round", -1);
 
@@ -121,15 +116,12 @@ public class SubgraphMapper extends Mapper<NullWritable, NeighbourhoodMap, IntWr
             context.write(node, value);
         }
 
-        for (IntWritable node : chooseNodes(value)) {
-            if (p > 0 && random.nextDouble() > p) {
-                /*
-                If probabilistic mode is enabled,
-                we honor the probability and skip emitting the node
-                 */
-                continue;
-            }
+        Double euristicFactor = Main.inputs.getEuristicFactor();
+        if (euristicFactor == null) {
+            euristicFactor = Utils.getEuristicFactorValue(round);
+        }
 
+        for (IntWritable node : chooseNodes(value, euristicFactor)) {
             context.write(node, value);
         }
     }

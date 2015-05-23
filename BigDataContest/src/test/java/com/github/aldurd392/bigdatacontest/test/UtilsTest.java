@@ -62,12 +62,6 @@ public class UtilsTest {
     }
 
     @Test
-    public void euristicFunctionTest() {
-        Assert.assertEquals(1, Utils.euristicFactorFunction(1), 10E-5);
-        Assert.assertEquals(0.265, Utils.euristicFactorFunction(50), 10E-2);
-    }
-
-    @Test
     public void IntArrayWritableFromStringTest() {
         IntWritable[] intWritableArray = new IntWritable[]{
                 new IntWritable(1),

@@ -25,8 +25,6 @@ public class Utils {
     private static final String pathResultFile = "result";
     private static final String successFileName = "_SUCCESS";
 
-    private static final double smoothing_factor = 5;
-
     /**
      * Given the neighbourhood map, calculate the density of the subgraph.
      * @param neighbourhood our subgraph representation
@@ -140,11 +138,19 @@ public class Utils {
     }
 
     /**
-     * This function selects a proper euristicFactor given the desired rho
-     * @param rho the desired density.
-     * @return an euristic factor that is inversely proportional to rho.
+     * This function will calculate the value of euristicFactor.
+     * This value will be decreasing from 1 to 0.25,
+     * at a rate of .05 for each round over the fifth.
+     * @param i the current round
+     * @return the value for this round for euristic factor
      */
-    public static double euristicFactorFunction(double rho) {
-        return Math.pow(rho, -(Math.log10(rho) / smoothing_factor));
+    public static double getEuristicFactorValue(int i) {
+        if (i <= 5) {
+            return 1;
+        } else if (i < 20) {
+            return 1 - (0.05 * (i - 5));
+        } else {
+            return 0.25;
+        }
     }
 }

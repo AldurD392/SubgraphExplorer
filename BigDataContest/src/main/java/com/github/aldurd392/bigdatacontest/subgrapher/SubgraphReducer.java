@@ -4,6 +4,7 @@ import com.github.aldurd392.bigdatacontest.Main;
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
 import com.github.aldurd392.bigdatacontest.utils.Utils;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Writable;
@@ -17,13 +18,19 @@ import java.util.PriorityQueue;
 
 public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, NullWritable, NeighbourhoodMap> {
 
-    private final static double euristicFactor = Main.inputs.getEuristicFactor();
-
     @Override
     protected void reduce(IntWritable key, Iterable<NeighbourhoodMap> values, Context context)
             throws IOException, InterruptedException {
         final NeighbourhoodMap subgraphMap = new NeighbourhoodMap();
         int mapIterableCounter = 0;
+
+        final Configuration conf = context.getConfiguration();
+        final int round = conf.getInt("round", -1);
+
+        Double euristicFactor = Main.inputs.getEuristicFactor();
+        if (euristicFactor == null) {
+            euristicFactor = Utils.getEuristicFactorValue(round);
+        }
 
         for (NeighbourhoodMap neighbourhoodMap : values) {
             subgraphMap.putAll(neighbourhoodMap);

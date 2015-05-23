@@ -15,30 +15,23 @@ public class ArgsParser {
     private double rho = 2;
 
     @Parameter(names = "-efactor", description = "Euristic Factor: double value.", arity = 1)
-    private double efactor = -1;
+    private Double efactor = null;
 
     @Parameter(names = "-iterMode", description = "Iterate ", arity = 1)
     private int iterTimes = 0;
-
-    @Parameter(names = "-probMode", description = "Enable probabilistic mode. Each candidate will be chosen with specified probability.")
-    private double probMode = 0;
 
     @Parameter(names = "-outNodes",
             description = "Number of nodes to emits from each SubgraphMapper. This parameter influences the number of rounds.",
             arity = 1
     )
-    private int outNodes = 1;
+    private int outNodes = 5;
 
 
     public String getInputfilePath() {
         return files.get(0);
     }
 
-    public double getEuristicFactor() {
-        if (efactor == -1) {  // default case
-            efactor = Utils.euristicFactorFunction(rho);
-        }
-
+    public Double getEuristicFactor() {
         return efactor;
     }
 
@@ -48,10 +41,6 @@ public class ArgsParser {
 
     public int iterMode() {
         return iterTimes;
-    }
-
-    public double probMode() {
-        return probMode;
     }
 
     public int getOutNodes() {

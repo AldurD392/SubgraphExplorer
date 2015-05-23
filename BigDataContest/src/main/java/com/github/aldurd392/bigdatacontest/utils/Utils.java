@@ -145,10 +145,10 @@ public class Utils {
      * @return the value for this round for euristic factor
      */
     public static double getEuristicFactorValue(int i) {
-        if (i <= 5) {
+        if (i <= 3) {
             return 1;
-        } else if (i < 20) {
-            return 1 - (0.05 * (i - 5));
+        } else if (i < 18) {
+            return 1 - (0.05 * (i - 3));
         } else {
             return 0.25;
         }

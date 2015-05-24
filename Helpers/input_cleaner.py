@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+"""
+Give me a SNAP graph file and I'll convert it to a proper input format.
+"""
+
 from __future__ import print_function
 import sys
 

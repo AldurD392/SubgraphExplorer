@@ -9,7 +9,6 @@ import java.io.IOException;
 
 /**
  * BigDataContest - com.github.aldurd392.bigdatacontest.reader
- * Created by aldur on 10/05/15.
  */
 public class ReaderMapper extends Mapper<NullWritable, NeighbourhoodMap, IntWritable, NeighbourhoodMap> {
 

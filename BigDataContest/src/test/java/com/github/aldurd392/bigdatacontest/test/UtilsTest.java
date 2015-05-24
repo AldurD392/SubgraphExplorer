@@ -15,7 +15,6 @@ import java.util.Map;
 
 /**
  * BigDataContest - com.github.aldurd392.bigdatacontest.test
- * Created by aldur on 10/05/15.
  */
 public class UtilsTest {
 

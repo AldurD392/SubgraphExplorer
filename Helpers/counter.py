@@ -1,6 +1,10 @@
 import os
 import sys
 
+"""
+Launch me on a "result" folder and I'll find the minimum subgraph stored there.
+"""
+
 len_dict = dict()
 content_dict = dict()
 for dirpath, _, file_list in os.walk(sys.argv[1]):

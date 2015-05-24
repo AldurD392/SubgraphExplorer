@@ -21,7 +21,7 @@ public class SubgraphMapper extends Mapper<NullWritable, NeighbourhoodMap, IntWr
      * Those neighbours will be then emitted and on next round will be part
      * of our new subgraph.
      */
-    private static Set<IntWritable> chooseNodes(NeighbourhoodMap neighbourhoodMap, double euristicFactor) {
+    private static Set<IntWritable> chooseNodes(NeighbourhoodMap neighbourhoodMap, double heuristicFactor) {
 
         /* We'll count here the occurrences of each neighbour in the map */
         final HashMap<Integer, Integer> counter = new HashMap<>();
@@ -60,12 +60,12 @@ public class SubgraphMapper extends Mapper<NullWritable, NeighbourhoodMap, IntWr
         /*
         Now, we add to the return set only those element whose count is higher than
         our threshold:
-            euristic factor * length
+            heuristic factor * length
          */
         final int length = neighbourhoodMap.size();
         for (Map.Entry<Integer, Integer> entry : counter.entrySet()) {
 
-            if (entry.getValue() >= euristicFactor * length) {
+            if (entry.getValue() >= heuristicFactor * length) {
                 HashSet<Integer> countedNodes = nodes_by_count.get(entry.getValue());
 
                 if (countedNodes == null) {
@@ -116,12 +116,12 @@ public class SubgraphMapper extends Mapper<NullWritable, NeighbourhoodMap, IntWr
             context.write(node, value);
         }
 
-        Double euristicFactor = Main.inputs.getEuristicFactor();
-        if (euristicFactor == null) {
-            euristicFactor = Utils.getEuristicFactorValue(round);
+        Double heuristicFactor = Main.inputs.getHeuristicFactor();
+        if (heuristicFactor == null) {
+            heuristicFactor = Utils.getHeuristicFactorValue(round);
         }
 
-        for (IntWritable node : chooseNodes(value, euristicFactor)) {
+        for (IntWritable node : chooseNodes(value, heuristicFactor)) {
             context.write(node, value);
         }
     }

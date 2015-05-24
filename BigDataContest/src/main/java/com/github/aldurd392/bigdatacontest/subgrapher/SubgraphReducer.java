@@ -27,9 +27,9 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, Null
         final Configuration conf = context.getConfiguration();
         final int round = conf.getInt("round", -1);
 
-        Double euristicFactor = Main.inputs.getEuristicFactor();
-        if (euristicFactor == null) {
-            euristicFactor = Utils.getEuristicFactorValue(round);
+        Double heuristicFactor = Main.inputs.getHeuristicFactor();
+        if (heuristicFactor == null) {
+            heuristicFactor = Utils.getHeuristicFactorValue(round);
         }
 
         for (NeighbourhoodMap neighbourhoodMap : values) {
@@ -101,7 +101,7 @@ public class SubgraphReducer extends Reducer<IntWritable, NeighbourhoodMap, Null
                 we remove form the subgraph all those nodes that are not promising,
                 and that have been added because of an erroneous merge.
                  */
-                if (minHeapEntry.getValue() < (euristicFactor * (subgraphMap.size() - 1))) {
+                if (minHeapEntry.getValue() < (heuristicFactor * (subgraphMap.size() - 1))) {
                     IntWritable minHeapEntryKey = minHeapEntry.getKey();
                     IntArrayWritable neighbours = (IntArrayWritable) subgraphMap.remove(minHeapEntryKey);
                     referencesMap.remove(minHeapEntryKey);

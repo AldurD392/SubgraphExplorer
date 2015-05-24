@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+"""
+I require iGraph.
+Give me an input file, a node list and its releated rho.
+I'll check the results and I'll draw you a fancy picture.
+"""
+
 import igraph
 import sys
 import math

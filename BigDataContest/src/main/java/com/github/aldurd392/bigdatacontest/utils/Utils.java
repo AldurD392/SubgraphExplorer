@@ -18,7 +18,6 @@ import java.util.Iterator;
 
 /**
  * BigDataContest - com.github.aldurd392.bigdatacontest.utils
- * Created by aldur on 10/05/15.
  */
 public class Utils {
     private static final String resultFileName = "_FOUND";
@@ -138,13 +137,13 @@ public class Utils {
     }
 
     /**
-     * This function will calculate the value of euristicFactor.
+     * This function will calculate the value of heuristicFactor.
      * This value will be decreasing from 1 to 0.25,
      * at a rate of .05 for each round over the fifth.
      * @param i the current round
-     * @return the value for this round for euristic factor
+     * @return the value for this round for heuristic factor
      */
-    public static double getEuristicFactorValue(int i) {
+    public static double getHeuristicFactorValue(int i) {
         if (i <= 3) {
             return 1;
         } else if (i < 18) {

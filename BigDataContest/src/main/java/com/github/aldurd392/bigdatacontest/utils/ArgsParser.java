@@ -14,13 +14,13 @@ public class ArgsParser {
     @Parameter(names = "-rho", description = "The fix rho value: double value.", arity = 1, required = true)
     private double rho = 2;
 
-    @Parameter(names = "-efactor", description = "Euristic Factor: double value.", arity = 1)
-    private Double efactor = null;
+    @Parameter(names = "-hefactor", description = "Heuristic Factor: double value.", arity = 1)
+    private Double hefactor = null;
 
-    @Parameter(names = "-iterMode", description = "Iterate ", arity = 1)
+    @Parameter(names = "-iter", description = "Iterate ", arity = 1)
     private int iterTimes = 0;
 
-    @Parameter(names = "-outNodes",
+    @Parameter(names = "-knodes",
             description = "Number of nodes to emits from each SubgraphMapper. This parameter influences the number of rounds.",
             arity = 1
     )
@@ -31,8 +31,8 @@ public class ArgsParser {
         return files.get(0);
     }
 
-    public Double getEuristicFactor() {
-        return efactor;
+    public Double getHeuristicFactor() {
+        return hefactor;
     }
 
     public double getRho() {

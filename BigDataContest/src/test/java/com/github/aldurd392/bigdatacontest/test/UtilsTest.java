@@ -8,64 +8,80 @@ import org.apache.hadoop.io.Writable;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 /**
  * BigDataContest - com.github.aldurd392.bigdatacontest.test
- * Created by aldur on 10/05/15.
  */
 public class UtilsTest {
 
-    private static final double DELTA = 10E-5;
-
     private void smallDensity() {
-        HashMap<Writable, Writable> map = new HashMap<>();
+        String neighbourhoodMapString = "{1:[2, 3, 4, 6], 2:[1, 4, 6], 4:[1, 2, 5, 6], 6:[1, 2, 4]}";
+        NeighbourhoodMap neighbourhoodMap = NeighbourhoodMap.fromString(neighbourhoodMapString);
+        Assert.assertNotNull(neighbourhoodMap);
 
-        IntWritable[] intWritableArray = new IntWritable[]{
-                new IntWritable(2),
-                new IntWritable(3),
-                new IntWritable(4),
-                new IntWritable(6),
-        };
-        IntArrayWritable arrayWritable = new IntArrayWritable();
-        arrayWritable.set(intWritableArray);
-        map.put(new IntWritable(1), arrayWritable);
+        IntArrayWritable subgraph = IntArrayWritable.fromString("[1, 2, 4, 6]");
+        Assert.assertNotNull(subgraph);
 
-        intWritableArray = new IntWritable[]{
-                new IntWritable(1),
-                new IntWritable(4),
-                new IntWritable(6),
-        };
-        arrayWritable = new IntArrayWritable();
-        arrayWritable.set(intWritableArray);
-        map.put(new IntWritable(2), arrayWritable);
+        final double rho = 6.0 / 4;
+        IntArrayWritable densestSubgraph = Utils.density(neighbourhoodMap, rho);
+        Assert.assertNotNull(densestSubgraph);
 
-        intWritableArray = new IntWritable[]{
-                new IntWritable(1),
-                new IntWritable(2),
-                new IntWritable(5),
-                new IntWritable(6),
-        };
-        arrayWritable = new IntArrayWritable();
-        arrayWritable.set(intWritableArray);
-        map.put(new IntWritable(4), arrayWritable);
+        HashSet<Writable> set_densestSubgraph = new HashSet<>(Arrays.asList(densestSubgraph.get()));
+        HashSet<Writable> set_neighbourhoodMap = new HashSet<>(Arrays.asList(subgraph.get()));
 
-        intWritableArray = new IntWritable[]{
-                new IntWritable(1),
-                new IntWritable(2),
-                new IntWritable(4),
-        };
-        arrayWritable = new IntArrayWritable();
-        arrayWritable.set(intWritableArray);
-        map.put(new IntWritable(6), arrayWritable);
-
-        NeighbourhoodMap neighbourhoodMap = new NeighbourhoodMap();
-        neighbourhoodMap.putAll(map);
-
-        Assert.assertEquals(Utils.density(neighbourhoodMap), 6.0 / 4.0, DELTA);
+        Assert.assertEquals(set_densestSubgraph, set_neighbourhoodMap);
     }
 
     private void bigDensity() {
+        String neighbourhoodMapString = "{1:[2, 3, 4, 5], 2:[3, 4, 5, 1], 3:[4, 5, 1, 2], 4:[5, 1, 2, 3], 5:[1, 2, 3, 4]}";
+        NeighbourhoodMap neighbourhoodMap = NeighbourhoodMap.fromString(neighbourhoodMapString);
+        Assert.assertNotNull(neighbourhoodMap);
+
+        IntArrayWritable subgraph = IntArrayWritable.fromString("[1, 2, 3, 4, 5]");
+        Assert.assertNotNull(subgraph);
+
+        final double rho = 2.0;
+        IntArrayWritable densestSubgraph = Utils.density(neighbourhoodMap, rho);
+        Assert.assertNotNull(densestSubgraph);
+
+        HashSet<Writable> set_densestSubgraph = new HashSet<>(Arrays.asList(densestSubgraph.get()));
+        HashSet<Writable> set_neighbourhoodMap = new HashSet<>(Arrays.asList(subgraph.get()));
+
+        Assert.assertEquals(set_densestSubgraph, set_neighbourhoodMap);
+    }
+
+    @Test
+    public void densityTest() {
+        smallDensity();
+        bigDensity();
+    }
+
+    @Test
+    public void IntArrayWritableFromStringTest() {
+        IntWritable[] intWritableArray = new IntWritable[]{
+                new IntWritable(1),
+                new IntWritable(2),
+                new IntWritable(3),
+                new IntWritable(4),
+        };
+
+        IntArrayWritable arrayWritable = new IntArrayWritable();
+        arrayWritable.set(intWritableArray);
+
+        String toString = arrayWritable.toString();
+        IntArrayWritable fromString = IntArrayWritable.fromString(toString);
+        Assert.assertNotNull(fromString);
+
+        IntWritable[] intWritableArrayFromString = (IntWritable[]) fromString.get();
+        Assert.assertArrayEquals(intWritableArray, intWritableArrayFromString);
+    }
+
+    @Test
+    public void NeighbourhoodMapFromStringTest() {
         HashMap<Writable, Writable> map = new HashMap<>();
 
         IntWritable[] intWritableArray = new IntWritable[]{
@@ -120,18 +136,20 @@ public class UtilsTest {
         NeighbourhoodMap neighbourhoodMap = new NeighbourhoodMap();
         neighbourhoodMap.putAll(map);
 
-        Assert.assertEquals(Utils.density(neighbourhoodMap), 2.0, DELTA);
-    }
+        String toString = neighbourhoodMap.toString();
+        NeighbourhoodMap fromString = NeighbourhoodMap.fromString(toString);
 
-    @Test
-    public void densityTest() {
-        smallDensity();
-        bigDensity();
-    }
+        Assert.assertNotNull(fromString);
+        Assert.assertEquals(map.size(), fromString.size());
 
-    @Test
-    public void euristicFunctionTest() {
-        Assert.assertEquals(1, Utils.euristicFactorFunction(1), 10E-5);
-        Assert.assertEquals(0.265, Utils.euristicFactorFunction(50), 10E-2);
+        for (Map.Entry<Writable, Writable> entry : fromString.entrySet()) {
+            IntWritable intWritableEntryKey = (IntWritable) entry.getKey();
+            Assert.assertTrue(map.containsKey(intWritableEntryKey));
+
+            IntArrayWritable intArrayWritableEntryValue = (IntArrayWritable) entry.getValue();
+            IntArrayWritable intArrayWritableMap = (IntArrayWritable) map.get(intWritableEntryKey);
+
+            Assert.assertArrayEquals(intArrayWritableEntryValue.get(), intArrayWritableMap.get());
+        }
     }
 }

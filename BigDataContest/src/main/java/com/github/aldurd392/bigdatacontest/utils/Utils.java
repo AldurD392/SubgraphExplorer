@@ -2,46 +2,86 @@ package com.github.aldurd392.bigdatacontest.utils;
 
 import com.github.aldurd392.bigdatacontest.datatypes.IntArrayWritable;
 import com.github.aldurd392.bigdatacontest.datatypes.NeighbourhoodMap;
-
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.*;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Iterator;
 
 /**
  * BigDataContest - com.github.aldurd392.bigdatacontest.utils
- * Created by aldur on 10/05/15.
  */
 public class Utils {
     private static final String resultFileName = "_FOUND";
     private static final String pathResultFile = "result";
     private static final String successFileName = "_SUCCESS";
 
-    private static final double smoothing_factor = 5;
+    /**
+     * Given the neighbourhood map, calculate the density of the subgraph.
+     * @param neighbourhood our subgraph representation
+     * @param rho the required density value
+     * @return null if the supplied subgraph didn't meet density requirements,
+     * otherwise the densest subgraph found that still meets the requirements.
+     */
+    public static IntArrayWritable density(NeighbourhoodMap neighbourhood, double rho) {
+        final int neighbourhood_size = neighbourhood.size();
 
-    public static double density(NeighbourhoodMap neighbourhood) {
-        HashSet<Integer> nodes_set = new HashSet<>();
-        for (Writable w : neighbourhood.keySet()) {
-            IntWritable i = (IntWritable) w;
-            nodes_set.add(i.get());
+        final HashSet<IntWritable> neighbourhood_nodes = new HashSet<>(neighbourhood_size);
+        for (Writable writable_node: neighbourhood.keySet()) {
+            IntWritable node = (IntWritable) writable_node;
+            neighbourhood_nodes.add(node);
         }
 
-        int i = 0;
-        for (Writable w : neighbourhood.values()) {
-            IntArrayWritable array_writable = (IntArrayWritable) w;
-            for (Writable w_node : array_writable.get()) {
-                IntWritable node = (IntWritable) w_node;
-                if (nodes_set.contains(node.get())) {
-                    i++;
+        /*
+         * We have the number of nodes in the subgraph.
+         * Let's count the number of edges too.
+         */
+        double edges_count = 0;
+        for (Writable writable_neighbours : neighbourhood.values()) {
+            IntArrayWritable neighbours = (IntArrayWritable) writable_neighbours;
+
+            for (Writable writable_neighbour : neighbours.get()) {
+                IntWritable neighbour = (IntWritable) writable_neighbour;
+
+                if (neighbourhood_nodes.contains(neighbour)) {
+                    edges_count++;
                 }
             }
         }
+        // We counted each edge twice, so better divide by two here.
+        edges_count = edges_count / 2.0;
 
-        return (i / 2.0) / nodes_set.size();
+        if (edges_count / neighbourhood_size >= rho) {
+            /*
+             * Once we know that the subgraph we're dealing with meets our density requirements,
+             * we check if it's a clique (by comparing the number of edges and the number of nodes).
+             * In that case we can shrink its size until it's minimal (our goal).
+             */
+            if (edges_count == ((neighbourhood_size - 1) * neighbourhood_size) / 2) {
+                Iterator<IntWritable> neighbourhood_nodes_iterator = neighbourhood_nodes.iterator();
+                for (double diff = edges_count / neighbourhood_size - rho; diff >= 0.5; diff -= 0.5) {
+                    neighbourhood_nodes_iterator.next();
+                    neighbourhood_nodes_iterator.remove();
+                }
+            }
+
+            IntWritable[] nodes_array = neighbourhood_nodes.toArray(new IntWritable[neighbourhood_nodes.size()]);
+            final IntArrayWritable densestSubgraph = new IntArrayWritable();
+            densestSubgraph.set(nodes_array);
+
+            return densestSubgraph;
+        }
+
+        /* If the subgraph didn't meet required density value, we return null. */
+        return null;
     }
 
     public static void writeResultOnFile(IntArrayWritable result) throws IOException {
@@ -71,8 +111,6 @@ public class Utils {
         Configuration conf = new Configuration();
         FileSystem fs = FileSystem.get(conf);
 
-        Writable w = new IntArrayWritable();
-
         FileStatus[] statuses;
         try {
             statuses = fs.listStatus(new Path(currentOuputDirectory));
@@ -87,7 +125,7 @@ public class Utils {
             }
 
             SequenceFile.Reader reader = new SequenceFile.Reader(fs, status.getPath(), conf);
-            if (reader.next(w)) {
+            if (reader.next(NullWritable.get())) {
                 reader.close();
                 return true;
             }
@@ -98,7 +136,20 @@ public class Utils {
         return false;
     }
 
-    public static double euristicFactorFunction(double rho) {
-        return Math.pow(rho, -(Math.log10(rho) / smoothing_factor));
+    /**
+     * This function will calculate the value of heuristicFactor.
+     * This value will be decreasing from 1 to 0.25,
+     * at a rate of .05 for each round over the fifth.
+     * @param i the current round
+     * @return the value for this round for heuristic factor
+     */
+    public static double getHeuristicFactorValue(int i) {
+        if (i <= 3) {
+            return 1;
+        } else if (i < 18) {
+            return 1 - (0.05 * (i - 3));
+        } else {
+            return 0.25;
+        }
     }
 }
